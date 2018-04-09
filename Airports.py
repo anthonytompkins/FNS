@@ -1,5 +1,5 @@
 import requests
-import json, urllib, time, re, gzip, unicodedata
+import json, urllib, time, re, gzip, datetime
 
 proxies = {
   'http': 'http://localhost:8080',
@@ -102,6 +102,11 @@ notam_data_org = 'PID_REASON_643=Calibration&' \
              'RMLS_LOG_ID=&' \
              'xsrfToken=' + xsrfToken[2][1]
 
+start_date = datetime.datetime.utcnow()
+end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4))
+start_time = '%02d%02d' %(datetime.datetime.utcnow().hour, datetime.datetime.utcnow().minute)
+end_time = '%02d%02d' %((datetime.datetime.utcnow() + datetime.timedelta(hours=4)).hour, datetime.datetime.utcnow().minute)
+
 notam_data = {
 
             'PID_REASON_643' : ['Calibration', 'CALIBRATION_PAEW'],
@@ -109,17 +114,18 @@ notam_data = {
             'PID_FREE_946' : '',
             'IS_DYNAMIC_FORM' : 'true',
             'CONDITION_TEXT' : '',
-            'START_DATE' : ['04/09/2018', '04/09/2018'],
-            'END_DATE' : ['04/09/2018', '04/09/2018'],
+            'START_DATE' : [start_date.strftime('%m/%d/%y'), start_date.strftime('%m/%d/%y')],
+            'END_DATE' : [end_date.strftime('%m/%d/%y'), end_date.strftime('%m/%d/%y')],
             'USER_ID' : ['7973','LoadTest Anthony'],
             'TRANSACTION_ID' : 'undefined',
             'FEATURE_ID' : '18668',
             'SCENARIO_ID' : '302',
             'AIRPORT_ID' : ['18668','BWI'],
-            'START_TIME' : '0200',
-            'END_TIME' : '0500',
-            'US_FAA' : '!BWI XX/XXX BWI AD AP ALL SFC WIP CLBR WORK S SIDE 1804090200-1904090500',
-            'ICAO' : 'XX/XXX NOTAMN \nQ) ZDC/QFAHW/IV/NBO/A/000/999/3910N07640W005 \n\nA) KBWI \nB) 1804080200 \nC) 1804080500 \nE) AD CLBR WORK ALL SFC WIP N SIDE ',
+            'START_TIME' : start_time,
+            'END_TIME' : end_time,
+            'US_FAA' : '!BWI XX/XXX BWI AD AP ALL SFC WIP CLBR WORK S SIDE %s%s-%s%s' %(start_date.strftime('%y%m%d'), start_time, end_date.strftime('%y%m%d'), end_time),
+            'ICAO' : 'XX/XXX NOTAMN \nQ) ZDC/QFAHW/IV/NBO/A/000/999/3910N07640W005 \n\nA) KBWI \nB) %s%s \nC) %s%s \nE) AD CLBR WORK ALL SFC WIP N SIDE '
+                     %(start_date.strftime('%y%m%d'),start_time, end_date.strftime('%y%m%d'), end_time),
             'PLAIN' : ' <table border="0"><tbody><tr><td><b>Issuing Airport:</b></td><td>(BWI) Baltimore/Washington Intl Thurgood Marshall </td></tr>'
                       '<tr><td><b>NOTAM Number:</b></td><td> XX/XXX</td></tr><tr><td colspan="2"><b>Effective Time Frame</b></td></tr>'
                       '<tr><td><b>Beginning:</b></td><td>Monday, March 5, 2018 0200 (UTC)</td></tr>'
