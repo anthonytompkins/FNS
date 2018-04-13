@@ -12,7 +12,7 @@ form_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/dnotamFormHandle
 utiltiy_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
 
 # login email
-username = "nmtech.test@faa.gov"
+username = "nmdod.test@faa.gov"
 # password
 password = "Test123!"
 
