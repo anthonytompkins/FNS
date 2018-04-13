@@ -58,7 +58,8 @@ for i in range(1):
     print response.status_code
     xsrfToken = json.loads ( response.text.lstrip('//OK') )
 
-    login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|load.test@airports.com|Password123!|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
+    login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
+                 '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'+ username +'|' + password + '|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
 
     response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
     print response.status_code
