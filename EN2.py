@@ -1,8 +1,8 @@
 import requests
 import json, urllib, time, re, gzip, datetime, random, string
 
-proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
-#proxies = None
+#proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
+proxies = None
 
 # URLs
 home_url = "https://notamdemo.aim.nas.faa.gov/en2plus/"
@@ -35,7 +35,7 @@ response = session.get(home_url, verify=False, proxies=proxies)
 print response.status_code
 print response.text
 
-for i in range(1):
+for i in range(10):
 
     session.headers.update(
         {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -140,8 +140,9 @@ for i in range(1):
 
     print submitted_notams
 
-    time.sleep(20)
+    time.sleep(5)
 
+time.sleep(120)
 
 session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 

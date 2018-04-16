@@ -1,18 +1,18 @@
 import requests
 import json, urllib, time, re, gzip, datetime, random
 
-#proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
-proxies = None
+proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
+#proxies = None
 
 # URLs
-home_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/#1"
-xsrf_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/xsrf"
-login_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/airportInfoService"
-form_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/dnotamFormHandler"
+home_url = "https://notamdemo.aim.nas.faa.gov/nmpc/"
+xsrf_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/user/login"
+login_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/user/login"
+form_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/notam/publish"
 utiltiy_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
 
 # login email
-username = "nmtech.test@faa.gov"
+username = "nmpc.test@faa.gov"
 # password
 password = "Test123!"
 
@@ -24,11 +24,9 @@ utility_data = '7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|478CF
 # A request session
 session = requests.Session()
 
-session.headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:39.0) Gecko/20100101 Firefox/39.0'})
-
-session.headers.update ({'host':'notamdemo.aim.nas.faa.gov'})
-
-session.headers.update ({'Referer':'https://notamdemo.aim.nas.faa.gov/dnotamtest/'})
+session.headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:39.0) Gecko/20100101 Firefox/39.0',
+                        'host':'notamdemo.aim.nas.faa.gov',
+                        'Referer':'https://notamdemo.aim.nas.faa.gov/nmpc/'})
 
 
 response = session.get(home_url, verify=False, proxies=proxies)
@@ -38,34 +36,36 @@ print response.text
 for i in range(1):
 
     session.headers.update(
-        {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        {'Accept': 'text/plain, application/json, */*',
          'Accept-Language': 'en-US,en;q=0.5',
-         'Accept-Encoding': 'gzip, deflate',
-         'Content-Type': 'text/x-gwt-rpc; charset=utf-8',
-         'X-GWT-Permutation': '91DAC5113A41AD9FACB523FF735B4CB6',
-         'X-GWT-Module-Base': 'https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/',
-         'Referer': 'https://notamdemo.aim.nas.faa.gov/dnotamtest/'
+         'Accept-Encoding': 'gzip, deflate, br',
+         'Content-Type': 'application/json;charset=utf-8',
+         #'X-GWT-Permutation': '91DAC5113A41AD9FACB523FF735B4CB6',
+         #'X-GWT-Module-Base': 'https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/',
+         'Referer': 'https://notamdemo.aim.nas.faa.gov/nmpc/'
          }
     )
 
-    response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
+    #response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
+    #print response.status_code
+    #print response.text
+
+    #session.cookies.update( { 'JSESSIONIDXSRFH':'317101520124880832' } )
+
+    #response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
+    #print response.status_code
+    #xsrfToken = json.loads ( response.text.lstrip('//OK') )
+
+    #login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|load.test@airports.com|Password123!|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
+    login_data = {'email' : username, 'password' : password }
+
+    response = session.post(login_url,verify=False,json=login_data, proxies=proxies)
     print response.status_code
-    print response.text
+    login_response = json.loads ( response.text )
 
-    session.cookies.update( { 'JSESSIONIDXSRFH':'317101520124880832' } )
+    print login_response
 
-    response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
-    print response.status_code
-    xsrfToken = json.loads ( response.text.lstrip('//OK') )
-
-    login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|load.test@airports.com|Password123!|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
-
-    response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
-    print response.status_code
-    print response.text.lstrip('//OK')
-
-    session.headers.update ( { 'Content-Type':'application/x-www-form-urlencoded' } )
-
+    session.headers.update ( { 'Referer': 'https://notamdemo.aim.nas.faa.gov/nmpc/pages/scenario_IAP_TEMP.html' } )
 
     start_date = datetime.datetime.utcnow()
     end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4))
@@ -73,87 +73,69 @@ for i in range(1):
     end_time = '%02d%02d' %((datetime.datetime.utcnow() + datetime.timedelta(hours=4)).hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,5))).minute)
 
     notam_data = {
-        'PID_TYPE_2461' : 'LAA',
-        'PID_STATUS_2462' : 'UNSERVICEABLE',
-        'PID_EFASTYP_8772' :'',
-        'PID_RCOTYP_8775' : 'RCO',
-        'PID_CDTYP_8778' : 'CD',
-        'PID_CTAFTYP_8781' : '',
-        'PID_RCAGTYP_8784' : '',
-        'PID_GNDTYP_8787' : 'GNDCTL',
-        'PID_BASFREQ_8790' : '',
-        'PID_BASFRQ_8931' : '',
-        'PID_FREQ_2469#0' : '100.00',
-        'IS_DYNAMIC_FORM' : 'true',
-        'CONDITION_TEXT' : '',
-        'START_DATE' : [start_date.strftime('%m/%d/%Y'), start_date.strftime('%m/%d/%Y')],
-        'END_DATE' : [end_date.strftime('%m/%d/%Y'), end_date.strftime('%m/%d/%Y')],
-        'USER_ID' : ['8004','Anthony Tompkins'],
-        'TRANSACTION_ID' : 'undefined',
-        'FEATURE_ID' : '6160',
-        'SCENARIO_ID' : '504',
-        'AIRPORT_ID' : ['15', 'AOCC'],
-        'START_TIME' : start_time,
-        'END_TIME' : end_time,
-        'US_FAA' : '!ACY XX/XXX ACY COM LOCAL AP ADVISORY SERVICE 100.00 OUT OF SERVICE %s%s-%s%s' %(start_date.strftime('%y%m%d'), start_time, end_date.strftime('%y%m%d'), end_time),
-        'ICAO' : 'XX/XXX NOTAMN \nQ) ZDC/QSAAS/IV/B/AE/000/999/3927N07434W005 \nA) KACY \nB) %s%s \nC) %s%s \n\nE) COM LOCAL AP ADVISORY SERVICE 100.00 OUT OF SERVICE'
-                 %(start_date.strftime('%y%m%d'),start_time, end_date.strftime('%y%m%d'), end_time),
-        'PLAIN' : '<table border="0"><tbody><tr><td><b>Issuing Airport:</b></td><td>(ACY) Atlantic City Intl</td></tr>'
-                  '<tr><td><b>NOTAM Number:</b></td><td>XX/XXX</td></tr>'
-                  '<tr><td colspan = "2"><b>Effective Time Frame</b></td></tr>'
-                  '<tr><td><b>Beginning: </b></td><td> Thursday, April 12, 2018 0200(UTC) </td></tr>'
-                  '<tr><td><b>Ending: </b></td><td>Thursday, April 12, 2018 0500(UTC) </td></tr>'
-                  '<tr><td colspan = "2"><b>Affected Areas </b></td></tr><tr><td><b>Airport:</b></td><td>ACY</td></tr>'
-                  '<tr><td><b>Air Traffic control service: </b></td><td>Local airport advisory </td></tr>'
-                  '<tr><td><b>Status: </b></td><td> Out of Service </td></tr><tr><td><b>Radio frequency: </b></td><td>100.00</td></tr><tr><td><b></b></td></tr>'
-                  '<tr></tr></tbody></table>',
-        'ACTION' : 'Activate',
-        'PPR_RADIO' : '',
-        'C_TRANSACTION_ID' : '',
-        'ARPT_DSG' : 'AOCC',
-        'ACCOUNT_DESIGNATOR' : '',
-        'ROLE' : 'FAA',
-        'COMPLEX_SCHED' : '',
-        'FORM_KEY' : '1523461745538',
-        'ON_CLICK_NEW_BTN_TIME' : 'undefined',
-        'END_DATE_OPTIONAL' : 'NO',
-        'NOTES' : '',
-        'NOTAM_R_NUMBER' : 'undefined',
-        'USER_TYPE' : 'OCC',
-        'RMLS_LOG_ID' : '123',
-        'xsrfToken' : xsrfToken[2][1]
+        'procedures':[{'name':'BRIDGE VISUAL RWY 29','printableVersionNumber':'1','status':'ACTIVE','startdate':'09/18/2014','featureid':'8288553','selected':'true'},
+                      {'name':'STADIUM VISUAL RWY 29','printableVersionNumber':'3','status':'ACTIVE','startdate':'06/25/2015','featureid':'8651938','selected':'false'}],
+        'airportId':'EWR',
+        'projectId':'697',
+        'scenario':'IAP_TEMP',
+        'keyword':'VFP',
+        'minimums':'Minimums',
+        'minimumsException':'',
+        'minimumsExceptionText':'',
+        'procChangeNote':'',
+        'procEquipment':'',
+        'procChangeNoteException':'',
+        'procChangeNoteExceptionText':'',
+        'startAsap':'Y',
+        'permanent':'N',
+        'estimated':'Y',
+        'selectedProcedures':{'name':'BRIDGE VISUAL RWY 29','printableVersionNumber':'1','status':'ACTIVE','startdate':'09/18/2014','featureid':'8288553','selected':'true'},
+        'procedureChangeTypes':[{'name':'Procedure NA','selected':'false'},
+                                {'name':'Alternate Minimums NA','selected':'false'},
+                                {'name':'Straight-in Minimums NA','selected':'false'},
+                                {'name':'Circling Minimums NA','selected':'false'},
+                                {'name':'Additional Equipment Required','selected':'false'}],
+        'procedureChangeType':'{}',
+        'tempObstacles':[],
+        'missedApproaches':[],
+        'notes':[],
+        'rwyNotes':[],
+        'fixMinimums':[],
+        'additionalNotes':[],
+        'otherNotes':[],
+        'locId':'4601',
+        'scenarioId':'807',
+        'startDate': start_date.strftime('%y%m%d%H%M'),
+        'endDate': end_date.strftime('%y%m%d%H%M'),
+        'domesticFormat':'!FDC X/XXXX EWR VFP NEWARK LIBERTY INTL, Newark, NJ.\nBRIDGE VISUAL RWY 29, AMDT 1...\nMINIMUMS.\n%s%s-%s%sEST'
+                         %(start_date.strftime('%y%m%d'), start_time, end_date.strftime('%y%m%d'), end_time),
+        'icaoFormat':'Q) ZNY/QPKXX/V/NBO/A/000/999/4041N07410W025\nA) KEWR\nB) %s%s\nC) %s%sEST\nE) VFP NEWARK LIBERTY INTL, Newark, NJ.\nBRIDGE VISUAL RWY 29, AMDT 1...\nMINIMUMS.\n'
+                     %(start_date.strftime('%y%m%d'), start_time, end_date.strftime('%y%m%d'), end_time),
+        'plainTextFormat':'Affected Facility: EWR,NEWARK LIBERTY INTL, Newark, NJ.\nNOTAM Number:  X/XXXX\n Effective Time Frame\nValid From: %s%s\nValid To: %s%sEST\nProcedure Affected: Visual Flight Procedure\nBRIDGE VISUAL RWY 29, AMDT 1...\nMINIMUMS.\n'
+                          %(start_date.strftime('%y%m%d'), start_time, end_date.strftime('%y%m%d'), end_time),
+        'featureId':'8288553',
+        'obstacles':'',
+        'contacts':[],
+        'teamId':'10',
+        'distList':''
     }
 
-    response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
+
+    response = session.post(form_url,verify=False,json=notam_data, proxies=proxies)
     print response.status_code
-    notam_response = response.text.encode('ascii','ignore')
+    submission_response = json.loads(response.text)
 
-    print notam_response
+    submission_response = {'notamNumber':submission_response['notamNumber'].encode('ascii','ignore'), 'code':submission_response['code'], 'timestamp': datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')}
 
-    notam_response = notam_response.lstrip("MessageTO").replace('[','').replace(']','')
+    print submission_response
 
-    print notam_response
-
-    items = [i.strip() for i in notam_response.split('~')]
-    items = [i.split('=') for i in items]
-
-    print items
-
-    submission_response = {}
-
-    for item in items:
-        if item.__len__() == 2:
-            submission_response[item[0]] = item[1]
-
-    if submission_response['errorCode'] != '0':
+    if submission_response['code'] != 0:
         continue
 
     print 'notamNumber: ' + submission_response['notamNumber']
-    print 'transactionId: ' + submission_response['transactionId']
-    print 'timestamp: ' + datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')
+    print 'timestamp: ' + submission_response['timestamp']
 
-
-    submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
+    submitted_notams.append(submission_response)
 
     print submitted_notams
 
