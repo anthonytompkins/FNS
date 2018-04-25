@@ -1,8 +1,8 @@
 import requests
 import json, urllib, time, re, gzip, datetime, random
 
-proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
-#proxies = None
+#proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
+proxies = None
 
 # URLs
 home_url = "https://notamdemo.aim.nas.faa.gov/nmpc/"
@@ -10,6 +10,7 @@ xsrf_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/user/login"
 login_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/user/login"
 form_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/notam/publish"
 utiltiy_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
+project_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/notam/listByProject?projectId=697"
 
 # login email
 username = "nmpc.test@faa.gov"
@@ -40,23 +41,11 @@ for i in range(1):
          'Accept-Language': 'en-US,en;q=0.5',
          'Accept-Encoding': 'gzip, deflate, br',
          'Content-Type': 'application/json;charset=utf-8',
-         #'X-GWT-Permutation': '91DAC5113A41AD9FACB523FF735B4CB6',
-         #'X-GWT-Module-Base': 'https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/',
          'Referer': 'https://notamdemo.aim.nas.faa.gov/nmpc/'
          }
     )
 
-    #response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
-    #print response.status_code
-    #print response.text
 
-    #session.cookies.update( { 'JSESSIONIDXSRFH':'317101520124880832' } )
-
-    #response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
-    #print response.status_code
-    #xsrfToken = json.loads ( response.text.lstrip('//OK') )
-
-    #login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|load.test@airports.com|Password123!|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
     login_data = {'email' : username, 'password' : password }
 
     response = session.post(login_url,verify=False,json=login_data, proxies=proxies)
@@ -141,7 +130,18 @@ for i in range(1):
 
     time.sleep(20)
 
-session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+
+#session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+session.headers.update ( { 'Referer' : 'https://notamdemo.aim.nas.faa.gov/nmpc/pages/notamList.html?projectId=697&uid=15jc4wevw' } )
+
+response = session.get(project_url,verify=False,proxies=proxies)
+print response.status_code
+project_response = json.loads(response.text)
+
+for i in project_response:
+    print i
+
+exit()
 
 for item in submitted_notams:
 
