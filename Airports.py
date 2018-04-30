@@ -35,7 +35,7 @@ response = session.get(home_url, verify=False, proxies=proxies)
 print response.status_code
 print response.text
 
-for i in range(1):
+for i in range(100):
 
     session.headers.update(
         {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -68,10 +68,10 @@ for i in range(1):
     session.headers.update ( { 'Content-Type':'application/x-www-form-urlencoded' } )
 
 
-    start_date = datetime.datetime.utcnow()
-    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4))
-    start_time = '%02d%02d' %(datetime.datetime.utcnow().hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=1)).minute)
-    end_time = '%02d%02d' %((datetime.datetime.utcnow() + datetime.timedelta(hours=4)).hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,5))).minute)
+    start_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,20))
+    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4,minutes=random.randint(1,20)))
+    start_time = '%02d%02d' %(start_date.hour, start_date.minute)
+    end_time = '%02d%02d' %(end_date.hour, end_date.minute)
 
     notam_data = {
 
@@ -143,18 +143,23 @@ for i in range(1):
 
     print 'notamNumber: ' + submission_response['notamNumber']
     print 'transactionId: ' + submission_response['transactionId']
-    print 'timestamp: ' + datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')
+    print 'timestamp: ' + datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X')
 
 
-    submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
+    submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X')})
 
     print submitted_notams
 
-    time.sleep(30)
+    time.sleep(3)
 
 session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
+time.sleep(60)
+
+exit()
+
 for item in submitted_notams:
+
 
     cancel_data = '7|2|74|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
               'com.google.gwt.user.client.rpc.XsrfToken/4254043109|7BD738F38104A4011DC17A5B8F3804D0|' \
@@ -174,7 +179,7 @@ for item in submitted_notams:
               '|18668|66|0|0|0|0|0|0|0|62|67|65|0|64|0|65|0|67|15709|68|0|0|0|0|0|0|0|62|69|65|0|64|0|70|0|69|6384|71|0|0|0|0|0|0|0|39|72|0|0|0|10|0|10|10|0' \
               '|WKjEd2u|73|74|64|42|WKjEd2u|0|4|2018|10|10|'
 
-    time.sleep(10)
+    time.sleep(1)
 
     response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
 
