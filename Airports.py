@@ -11,7 +11,8 @@ home_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/#1"
 xsrf_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/xsrf"
 login_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/airportInfoService"
 form_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/dnotamFormHandler"
-utiltiy_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
+utility_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
+cancel_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/airportInfoService"
 
 # login email
 username = "load.test@airports.com"
@@ -19,6 +20,7 @@ username = "load.test@airports.com"
 password = "Password123!"
 
 submitted_notams = []
+canceled_notams = []
 
 submitted_airport_notams = 0
 canceled_airpot_notams = 0
@@ -39,6 +41,7 @@ try:
     response = session.get(home_url, verify=False, proxies=proxies)
     if response.status_code != 200:
         print "Error Getting Airport Home URL"
+        time.sleep(30)
         exit(1)
 except:
     print "Error Getting Airport Home URL"
@@ -59,7 +62,7 @@ for i in range(100):
     )
 
     try:
-        response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
+        response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
 
         if response.status_code != 200:
             print "Error Posting Airport Utility Data"
@@ -99,7 +102,7 @@ for i in range(100):
             time.sleep(30)
             continue
     except:
-        print "Error Posting Airport Utility Data"
+        print "Error Posting Airport Login Data"
         time.sleep(30)
         continue
 
@@ -220,7 +223,8 @@ for i in range(100):
               '|WKjEd2u|73|74|64|42|WKjEd2u|0|4|2018|10|10|'
 
         try:
-            response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
+            response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
+
             if response.status_code != 200:
                 print "Error Canceling Airport NOTAM: %s" %(item['notamNumber'])
                 time.sleep(30)
@@ -230,7 +234,7 @@ for i in range(100):
             time.sleep(30)
             continue
 
-        cancel_response = json.loads ( response.text.lstrip('//OK') )
+        canceled_notams.append(item)
 
         canceled_airpot_notams += 1
 

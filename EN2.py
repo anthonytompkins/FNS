@@ -1,5 +1,7 @@
 import requests
-import json, urllib, time, re, gzip, datetime, random, string
+import json, urllib, time, re, gzip, datetime, random, string, urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
 proxies = None
@@ -9,7 +11,8 @@ home_url = "https://notamdemo.aim.nas.faa.gov/en2plus/"
 xsrf_url = "https://notamdemo.aim.nas.faa.gov/en2plus/en2/xsrf"
 login_url = "https://notamdemo.aim.nas.faa.gov/en2plus/en2/airportInfoService"
 form_url = "https://notamdemo.aim.nas.faa.gov/en2plus/en2/dnotamFormHandler"
-utiltiy_url = "https://notamdemo.aim.nas.faa.gov/en2plus/en2/utilityService"
+utility_url = "https://notamdemo.aim.nas.faa.gov/en2plus/en2/utilityService"
+cancel_url = "https://notamdemo.aim.nas.faa.gov/en2plus/en2/airportInfoService"
 
 # login email
 username = "en2.test@faa.gov"
@@ -17,6 +20,10 @@ username = "en2.test@faa.gov"
 password = "Test123!"
 
 submitted_notams = []
+canceled_notams = []
+
+submitted_en2_notams = 0
+canceled_en2_notams = 0
 
 xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|E1EF26ED6384B9AF4934C71870F2E259|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
@@ -30,10 +37,17 @@ session.headers.update ({'host':'notamdemo.aim.nas.faa.gov'})
 
 session.headers.update ({'Referer':'https://notamdemo.aim.nas.faa.gov/en2plus/'})
 
+try:
+    response = session.get(home_url, verify=False, proxies=proxies)
 
-response = session.get(home_url, verify=False, proxies=proxies)
-print response.status_code
-print response.text
+    if response.status_code != 200:
+        print "Error Getting EN2 Home Url"
+        time.sleep(30)
+        exit(1)
+except:
+    print "Error Getting EN2 Home Url"
+    time.sleep(30)
+    exit(1)
 
 for i in range(10):
 
@@ -48,14 +62,33 @@ for i in range(10):
          }
     )
 
-    response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
-    print response.status_code
-    print response.text
+    try:
+        response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting EN2 Utility Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting EN2 Utility Data"
+        time.sleep(30)
+        continue
+
 
     session.cookies.update( { 'JSESSIONIDXSRF3N2':'330581523574837336' } )
 
-    response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
-    print response.status_code
+    try:
+        response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting EN2 XSRF Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting XSRF EN2 Data"
+        time.sleep(30)
+        continue
+
     xsrfToken = json.loads ( response.text.lstrip('//OK') )
 
     login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
@@ -63,17 +96,25 @@ for i in range(10):
                  + username + '|' + password + '|1|2|3|4|5|6|2|7|7|8|9|'
 
 
-    response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
-    print response.status_code
-    print response.text.lstrip('//OK')
+    try:
+        response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting EN2 Login Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting EN2 Login Data"
+        time.sleep(30)
+        continue
 
     session.headers.update ( { 'Content-Type':'application/x-www-form-urlencoded' } )
 
+    start_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,20))
+    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4,minutes=random.randint(1,20)))
+    start_time = '%02d%02d' %(start_date.hour, start_date.minute)
+    end_time = '%02d%02d' %(end_date.hour, end_date.minute)
 
-    start_date = datetime.datetime.utcnow()
-    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4))
-    start_time = '%02d%02d' %(datetime.datetime.utcnow().hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=1)).minute)
-    end_time = '%02d%02d' %((datetime.datetime.utcnow() + datetime.timedelta(hours=4)).hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,5))).minute)
     free_form_text = 'AIRSPACE %s' %((random.choice(string.letters)).capitalize())
 
     notam_data = {
@@ -107,20 +148,24 @@ for i in range(10):
     }
 
 
-    response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
-    print response.status_code
-    notam_response = response.text.encode('ascii','ignore')
+    try:
+        response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
-    print notam_response
+        if response.status_code != 200:
+            print "Error Posting EN2 NOTAM"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting EN2 NOTAM"
+        time.sleep(30)
+        continue
+
+    notam_response = response.text.encode('ascii','ignore')
 
     notam_response = notam_response.lstrip("MessageTO").replace('[','').replace(']','')
 
-    print notam_response
-
     items = [i.strip() for i in notam_response.split('~')]
     items = [i.split('=') for i in items]
-
-    print items
 
     submission_response = {}
 
@@ -129,26 +174,26 @@ for i in range(10):
             submission_response[item[0]] = item[1]
 
     if submission_response['errorCode'] != '0':
+        print response.text
         continue
+    else:
+        submitted_en2_notams += 1
 
-    print 'notamNumber: ' + submission_response['notamNumber']
-    print 'transactionId: ' + submission_response['transactionId']
-    print 'timestamp: ' + datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')
-
+    print "EN2 NOTAMS Submitted: %d" % (submitted_en2_notams)
 
     submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
 
-    print submitted_notams
+    time.sleep(2)
 
-    time.sleep(5)
+    if (submitted_en2_notams % 10) == 0:
 
-time.sleep(120)
+        time.sleep(60)
 
-session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+        session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
-for item in submitted_notams:
+        item = submitted_notams.pop(0)
 
-    cancel_data = '7|2|64|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' \
+        cancel_data = '7|2|64|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' \
                   'A9C9AB7C56FD2B82EF20831A6FE8ABA1|gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611|' \
                   'gov.faa.aim.dnotam.ui.dto.UserTO/1465918794|' + item['transactionId'] + '||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;/2600011424|' \
                   '1|0|FPA|2|ABQ|4|COU|7|FTW|12|PNM|3|CSA-Central Area|ESA-Eastern Area|WSA-Western Area|http://notamdemo.aim.nas.faa.gov/en2plus/en2/index.html|' \
@@ -162,12 +207,20 @@ for item in submitted_notams:
                   '|45|39|46|47|39|48|16|10|0|2|0|0|38|3|49|50|24|51|0|0|52|49|53|13|54|0|0|52|49|55|16|56|0|0|52|57|29|58|1|59|10|0|10|10|0|60|0|0|WLADvey|61|62|63|30|WLADvey|0|2018|10|64|'
 
 
-    time.sleep(10)
+        try:
+            response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
-    response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
+            if response.status_code != 200:
+                print "Error Canceling NOTAM: %s" %(response.text)
+                time.sleep(30)
+                continue
+        except:
+            print "Error Canceling NOTAM"
+            time.sleep(30)
+            continue
 
-    print response.status_code
+        canceled_notams.append(item)
 
-    cancel_response = json.loads ( response.text.lstrip('//OK') )
+        canceled_en2_notams += 1
 
-    print cancel_response
+        print "EN2 NOTAMS Canceled: %d" % (canceled_en2_notams)

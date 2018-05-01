@@ -1,5 +1,7 @@
 import requests
-import json, urllib, time, re, gzip, datetime, random
+import json, urllib, time, re, gzip, datetime, random, urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
 proxies = None
@@ -9,7 +11,8 @@ home_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/#1"
 xsrf_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/xsrf"
 login_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/airportInfoService"
 form_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/dnotamFormHandler"
-utiltiy_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
+utility_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
+cancel_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/airportInfoService"
 
 # login email
 username = "nmtech.test@faa.gov"
@@ -17,10 +20,15 @@ username = "nmtech.test@faa.gov"
 password = "Test123!"
 
 submitted_notams = []
+canceled_notams = []
+
+submitted_techops_notams = 0
+canceled_techops_notams = 0
 
 xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
 utility_data = '7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
+
 # A request session
 session = requests.Session()
 
@@ -31,11 +39,19 @@ session.headers.update ({'host':'notamdemo.aim.nas.faa.gov'})
 session.headers.update ({'Referer':'https://notamdemo.aim.nas.faa.gov/dnotamtest/'})
 
 
-response = session.get(home_url, verify=False, proxies=proxies)
-print response.status_code
-print response.text
+try:
+    response = session.get(home_url, verify=False, proxies=proxies)
 
-for i in range(1):
+    if response.status_code != 200:
+        print "Error Getting TechOps Home URL"
+        time.sleep(30)
+        exit(1)
+except:
+    print "Error Getting TechOps Home URL"
+    time.sleep(30)
+    exit(1)
+
+for i in range(10):
 
     session.headers.update(
         {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -48,31 +64,56 @@ for i in range(1):
          }
     )
 
-    response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
-    print response.status_code
-    print response.text
+    try:
+        response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting TechOps Utility Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting TechOps Utility Data"
+        time.sleep(30)
+        continue
 
     session.cookies.update( { 'JSESSIONIDXSRFH':'317101520124880832' } )
 
-    response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
-    print response.status_code
+    try:
+        response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting TechOps XSRF Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting TechOps XSRF Data"
+        time.sleep(30)
+        continue
+
     xsrfToken = json.loads ( response.text.lstrip('//OK') )
 
     login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
                  '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'\
                  + username + '|' + password +'|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
 
-    response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
-    print response.status_code
-    print response.text.lstrip('//OK')
+    try:
+        response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting TechOps Login Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting TechOps Login Data"
+        time.sleep(30)
+        continue
 
     session.headers.update ( { 'Content-Type':'application/x-www-form-urlencoded' } )
 
-
-    start_date = datetime.datetime.utcnow()
-    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4))
-    start_time = '%02d%02d' %(datetime.datetime.utcnow().hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=1)).minute)
-    end_time = '%02d%02d' %((datetime.datetime.utcnow() + datetime.timedelta(hours=4)).hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,5))).minute)
+    start_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,20))
+    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4,minutes=random.randint(1,20)))
+    start_time = '%02d%02d' %(start_date.hour, start_date.minute)
+    end_time = '%02d%02d' %(end_date.hour, end_date.minute)
 
     notam_data = {
         'PID_TYPE_2461' : 'LAA',
@@ -126,20 +167,24 @@ for i in range(1):
         'xsrfToken' : xsrfToken[2][1]
     }
 
-    response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
-    print response.status_code
-    notam_response = response.text.encode('ascii','ignore')
+    try:
+        response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
-    print notam_response
+        if response.status_code != 200:
+            print "Error Posting TechOps NOTAM"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting TechOps NOTAM"
+        time.sleep(30)
+        continue
+
+    notam_response = response.text.encode('ascii','ignore')
 
     notam_response = notam_response.lstrip("MessageTO").replace('[','').replace(']','')
 
-    print notam_response
-
     items = [i.strip() for i in notam_response.split('~')]
     items = [i.split('=') for i in items]
-
-    print items
 
     submission_response = {}
 
@@ -148,24 +193,26 @@ for i in range(1):
             submission_response[item[0]] = item[1]
 
     if submission_response['errorCode'] != '0':
+        print response.text
         continue
-
-    print 'notamNumber: ' + submission_response['notamNumber']
-    print 'transactionId: ' + submission_response['transactionId']
-    print 'timestamp: ' + datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')
-
+    else:
+        submitted_techops_notams += 1
 
     submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
 
-    print submitted_notams
+    print "TechOps Submitted NOTAMS: %d" %(submitted_techops_notams)
 
-    time.sleep(20)
+    time.sleep(2)
 
-session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+    if (submitted_techops_notams % 10) == 0:
 
-for item in submitted_notams:
+        time.sleep(60)
 
-    cancel_data = '7|2|83|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
+        session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+
+        item = submitted_notams.pop(0)
+
+        cancel_data = '7|2|83|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
                   'com.google.gwt.user.client.rpc.XsrfToken/4254043109|6662D02745FB83DF3C87D3EB478A29C1|gov.faa.aim.dnotam.ui.client.AirportInformationService|' \
                   'cancelNotam|java.lang.String/2004016611|gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|'+ item['transactionId'] +'||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;' \
                   '/2600011424|11|0|Classification-All|-1|12|Communications|22|COM|1|13|Lighted Aids|75|LIGHTED AID|2|14|Navaids|25|NAV|3|15|Radar|76|RADAR|4|16|Weather' \
@@ -179,13 +226,20 @@ for item in submitted_notams:
                   '|0|0|32|0|62|3|73|74|65|0|74|0|0|0|75|15|76|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|77|10|78|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|79|20|80|0|0|0|0|0|0|0|28|81|0|0|0|10|0|10|10|0|' \
                   'WK1YS_P|82|83|74|53|WK1YS_P|0|4|2018|10|10|'
 
+        try:
+            response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
-    time.sleep(10)
+            if response.status_code != 200:
+                print "Error Canceling TechOps NOTAM"
+                time.sleep(30)
+                continue
+        except:
+            print "Error Canceling TechOps NOTAM"
+            time.sleep(30)
+            continue
 
-    response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
+        canceled_notams.append(item)
 
-    print response.status_code
+        canceled_techops_notams += 1
 
-    cancel_response = json.loads ( response.text.lstrip('//OK') )
-
-    print cancel_response
+        print "TechOps Canceled NOTAMS: %d" %(canceled_techops_notams)

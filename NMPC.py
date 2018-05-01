@@ -1,16 +1,17 @@
 import requests
-import json, urllib, time, re, gzip, datetime, random
+import json, urllib, time, re, gzip, datetime, random, urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
 proxies = None
 
 # URLs
 home_url = "https://notamdemo.aim.nas.faa.gov/nmpc/"
-xsrf_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/user/login"
 login_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/user/login"
 form_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/notam/publish"
-utiltiy_url = "https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/utilityService"
 project_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/notam/listByProject?projectId=697"
+cancel_url = "https://notamdemo.aim.nas.faa.gov/nmpc/action/notam/cancelNotams"
 
 # login email
 username = "nmpc.test@faa.gov"
@@ -18,6 +19,10 @@ username = "nmpc.test@faa.gov"
 password = "Test123!"
 
 submitted_notams = []
+canceled_notams = []
+
+submitted_nmpc_notams = 0
+canceled_nmpc_notams = 0
 
 xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
@@ -29,12 +34,19 @@ session.headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10
                         'host':'notamdemo.aim.nas.faa.gov',
                         'Referer':'https://notamdemo.aim.nas.faa.gov/nmpc/'})
 
+try:
+    response = session.get(home_url, verify=False, proxies=proxies)
 
-response = session.get(home_url, verify=False, proxies=proxies)
-print response.status_code
-print response.text
+    if response.status_code != 200:
+        print "Error Getting NMPC Home URL"
+        time.sleep(30)
+        exit(1)
+except:
+    print "Error Getting NMPC Home URL"
+    time.sleep(30)
+    exit(1)
 
-for i in range(1):
+for i in range(20):
 
     session.headers.update(
         {'Accept': 'text/plain, application/json, */*',
@@ -48,18 +60,24 @@ for i in range(1):
 
     login_data = {'email' : username, 'password' : password }
 
-    response = session.post(login_url,verify=False,json=login_data, proxies=proxies)
-    print response.status_code
-    login_response = json.loads ( response.text )
+    try:
+        response = session.post(login_url,verify=False,json=login_data, proxies=proxies)
 
-    print login_response
+        if response.status_code != 200:
+            print "Error Posting NMPC Login Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting NMPC Login Data"
+        time.sleep(30)
+        continue
 
     session.headers.update ( { 'Referer': 'https://notamdemo.aim.nas.faa.gov/nmpc/pages/scenario_IAP_TEMP.html' } )
 
-    start_date = datetime.datetime.utcnow()
-    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4))
-    start_time = '%02d%02d' %(datetime.datetime.utcnow().hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=1)).minute)
-    end_time = '%02d%02d' %((datetime.datetime.utcnow() + datetime.timedelta(hours=4)).hour, (datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,5))).minute)
+    start_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=random.randint(1,20))
+    end_date = (datetime.datetime.utcnow() + datetime.timedelta(hours=4,minutes=random.randint(1,20)))
+    start_time = '%02d%02d' %(start_date.hour, start_date.minute)
+    end_time = '%02d%02d' %(end_date.hour, end_date.minute)
 
     notam_data = {
         'procedures':[{'name':'BRIDGE VISUAL RWY 29','printableVersionNumber':'1','status':'ACTIVE','startdate':'09/18/2014','featureid':'8288553','selected':'true'},
@@ -110,62 +128,77 @@ for i in range(1):
     }
 
 
-    response = session.post(form_url,verify=False,json=notam_data, proxies=proxies)
-    print response.status_code
+    try:
+        response = session.post(form_url,verify=False,json=notam_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting NMPC NOTAM"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting NMPC NOTAM"
+        time.sleep(30)
+        continue
+
     submission_response = json.loads(response.text)
 
     submission_response = {'notamNumber':submission_response['notamNumber'].encode('ascii','ignore'), 'code':submission_response['code'], 'timestamp': datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')}
 
-    print submission_response
-
     if submission_response['code'] != 0:
+        print response.text
+        continue
+    else:
+        submitted_nmpc_notams += 1
+
+    session.headers.update(
+        {'Referer': 'https://notamdemo.aim.nas.faa.gov/nmpc/pages/notamList.html?projectId=697&uid=15jc4wevw'})
+
+    try:
+        response = session.get(project_url, verify=False, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Getting NMPC Project Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Getting NMPC Project Data"
+        time.sleep(30)
         continue
 
-    print 'notamNumber: ' + submission_response['notamNumber']
-    print 'timestamp: ' + submission_response['timestamp']
+    project_response = json.loads(response.text)
+
+    for project in project_response:
+        if submission_response['notamNumber'] == project['notamnumber'].encode('ascii','ignore'):
+            submission_response['transactionId'] = project['transactionid']
 
     submitted_notams.append(submission_response)
 
-    print submitted_notams
+    print "NMPC NOTAMS Submitted: %d" % (submitted_nmpc_notams)
 
-    time.sleep(20)
+    time.sleep(1)
 
+    if (submitted_nmpc_notams % 10) == 0:
 
-#session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
-session.headers.update ( { 'Referer' : 'https://notamdemo.aim.nas.faa.gov/nmpc/pages/notamList.html?projectId=697&uid=15jc4wevw' } )
+        time.sleep(60)
 
-response = session.get(project_url,verify=False,proxies=proxies)
-print response.status_code
-project_response = json.loads(response.text)
+        item = submitted_notams.pop(0)
 
-for i in project_response:
-    print i
+        cancel_data = {'transactionIds':[item['transactionId']],'reason':'Facility Return to Service'}
 
-exit()
+        try:
+            response = session.post(cancel_url,verify=False,json=cancel_data, proxies=proxies)
 
-for item in submitted_notams:
+            if response.status_code != 200:
+                print "Error Canceling NMPC NOTAM"
+                time.sleep(30)
+                continue
+        except:
+            print "Error Canceling NMPC NOTAM"
+            time.sleep(30)
+            continue
 
-    cancel_data = '7|2|83|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
-                  'com.google.gwt.user.client.rpc.XsrfToken/4254043109|6662D02745FB83DF3C87D3EB478A29C1|gov.faa.aim.dnotam.ui.client.AirportInformationService|' \
-                  'cancelNotam|java.lang.String/2004016611|gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|'+ item['transactionId'] +'||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;' \
-                  '/2600011424|11|0|Classification-All|-1|12|Communications|22|COM|1|13|Lighted Aids|75|LIGHTED AID|2|14|Navaids|25|NAV|3|15|Radar|76|RADAR|4|16|Weather' \
-                  '|77|WEATHER|5|43|Obstruction|OBST|18|AOCC-Atlantic OCC|10|MOCC-Mid States OCC|20|POCC-Pacific OCC|http://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/index.html' \
-                  '|5555555555|java.util.Date/3385151746|Anthony|http://notamdemo.aim.nas.faa.gov/fnshelp/nmoccuserguide.pdf|172.26.22.194|FAA|Tompkins|Success' \
-                  '|nmtech.test@faa.gov|Test123!|java.util.ArrayList/4159755760|gov.faa.aim.dnotam.ui.dto.UserPreference/1057420195|EXPIRY_NOTIFICATION_HRS|48|SHOWPAGINATION|YES|SHOWMAP' \
-                  '|NO|ROWLIMIT|50|CANCEL_DAYS|gov.faa.aim.dnotam.ui.dto.UserRole/1873077557|OCC|AOCC|Atlantic OCC|MOCC|Mid States OCC|POCC|Pacific OCC|5612f2315bb61cf410caf1636ea5' \
-                  '|Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0|8004|1|2|3|4|5|6|3|7|8|7|9|8|0|10|10|0|0|0|11|7|12|8|13|14|15|14|14|0|15|16|12|8|17|13|18' \
-                  '|14|19|20|18|21|12|8|22|13|23|14|24|25|23|26|12|8|27|13|28|14|29|30|28|31|12|8|32|13|33|14|34|35|33|36|12|8|37|13|38|14|39|40|38|41|12|8|42|13|43|14|14|44|43|45|11|3|12|2|32' \
-                  '|46|12|2|47|48|12|2|49|50|10|0|51|10|10|0|52|0|53|WK1YS_P|11|10|0|54|55|15|56|57|58|0|32|0|59|60|0|44|3|0|0|10|61|0|0|90|62|5|63|64|65|63|66|67|63|68|69|63|70|71|63|72|26|10' \
-                  '|0|0|32|0|62|3|73|74|65|0|74|0|0|0|75|15|76|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|77|10|78|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|79|20|80|0|0|0|0|0|0|0|28|81|0|0|0|10|0|10|10|0|' \
-                  'WK1YS_P|82|83|74|53|WK1YS_P|0|4|2018|10|10|'
+        canceled_notams.append(item)
 
+        canceled_nmpc_notams += 1
 
-    time.sleep(10)
-
-    response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
-
-    print response.status_code
-
-    cancel_response = json.loads ( response.text.lstrip('//OK') )
-
-    print cancel_response
+        print "NMPC NOTAMS Canceled: %d" %(canceled_nmpc_notams)
