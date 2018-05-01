@@ -1,5 +1,7 @@
 import requests
-import json, urllib, time, re, gzip, datetime, random
+import json, urllib, time, re, gzip, datetime, random, urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 #proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
 proxies = None
@@ -18,6 +20,9 @@ password = "Password123!"
 
 submitted_notams = []
 
+submitted_airport_notams = 0
+canceled_airpot_notams = 0
+
 xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
 utility_data = '7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
@@ -30,10 +35,15 @@ session.headers.update ({'host':'notamdemo.aim.nas.faa.gov'})
 
 session.headers.update ({'Referer':'https://notamdemo.aim.nas.faa.gov/dnotamtest/'})
 
-
-response = session.get(home_url, verify=False, proxies=proxies)
-print response.status_code
-print response.text
+try:
+    response = session.get(home_url, verify=False, proxies=proxies)
+    if response.status_code != 200:
+        print "Error Getting Airport Home URL"
+        exit(1)
+except:
+    print "Error Getting Airport Home URL"
+    time.sleep(30)
+    exit(1)
 
 for i in range(100):
 
@@ -48,22 +58,51 @@ for i in range(100):
          }
     )
 
-    response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
-    print response.status_code
-    print response.text
+    try:
+        response = session.post(utiltiy_url, data=utility_data, verify=False, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting Airport Utility Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting Airport Utility Data"
+        time.sleep(30)
+        continue
 
     session.cookies.update( { 'JSESSIONIDXSRFH':'317101520124880832' } )
 
-    response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
-    print response.status_code
+
+    try:
+        response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting Airport XSRF Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting Airport XSRF Data"
+        time.sleep(30)
+        continue
+
+
     xsrfToken = json.loads ( response.text.lstrip('//OK') )
 
     login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
                  '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'+ username +'|' + password + '|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
 
-    response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
-    print response.status_code
-    print response.text.lstrip('//OK')
+    try:
+        response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
+
+        if response.status_code != 200:
+            print "Error Posting Airport Login Data"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting Airport Utility Data"
+        time.sleep(30)
+        continue
+
 
     session.headers.update ( { 'Content-Type':'application/x-www-form-urlencoded' } )
 
@@ -117,20 +156,24 @@ for i in range(100):
             'xsrfToken' : xsrfToken[2][1]
     }
 
-    response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
-    print response.status_code
-    notam_response = response.text.encode('ascii','ignore')
+    try:
+        response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
-    print notam_response
+        if response.status_code != 200:
+            print "Error Posting Airport NOTAM"
+            time.sleep(30)
+            continue
+    except:
+        print "Error Posting Airport NOTAM"
+        time.sleep(30)
+        continue
+
+    notam_response = response.text.encode('ascii','ignore')
 
     notam_response = notam_response.lstrip("MessageTO").replace('[','').replace(']','')
 
-    print notam_response
-
     items = [i.strip() for i in notam_response.split('~')]
     items = [i.split('=') for i in items]
-
-    print items
 
     submission_response = {}
 
@@ -139,29 +182,26 @@ for i in range(100):
             submission_response[item[0]] = item[1]
 
     if submission_response['errorCode'] != '0':
+        print response.text
         continue
-
-    print 'notamNumber: ' + submission_response['notamNumber']
-    print 'transactionId: ' + submission_response['transactionId']
-    print 'timestamp: ' + datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X')
-
+    else:
+        submitted_airport_notams += 1
 
     submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X')})
 
-    print submitted_notams
+    print "Airport NOTAMS Submitted: %d" %(submitted_airport_notams)
 
     time.sleep(3)
 
-session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+    if (submitted_airport_notams % 10) == 0:
 
-time.sleep(60)
+        time.sleep(60)
 
-exit()
+        session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
-for item in submitted_notams:
+        item = submitted_notams.pop(0)
 
-
-    cancel_data = '7|2|74|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
+        cancel_data = '7|2|74|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
               'com.google.gwt.user.client.rpc.XsrfToken/4254043109|7BD738F38104A4011DC17A5B8F3804D0|' \
               'gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611|' \
               'gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|'+ item['transactionId'] +'||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;/2600011424|' \
@@ -179,12 +219,19 @@ for item in submitted_notams:
               '|18668|66|0|0|0|0|0|0|0|62|67|65|0|64|0|65|0|67|15709|68|0|0|0|0|0|0|0|62|69|65|0|64|0|70|0|69|6384|71|0|0|0|0|0|0|0|39|72|0|0|0|10|0|10|10|0' \
               '|WKjEd2u|73|74|64|42|WKjEd2u|0|4|2018|10|10|'
 
-    time.sleep(1)
+        try:
+            response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
+            if response.status_code != 200:
+                print "Error Canceling Airport NOTAM: %s" %(item['notamNumber'])
+                time.sleep(30)
+                continue
+        except:
+            print "Error Canceling Airport NOTAM: %s" % (item['notamNumber'])
+            time.sleep(30)
+            continue
 
-    response = session.post(login_url,verify=False,data=cancel_data, proxies=proxies)
+        cancel_response = json.loads ( response.text.lstrip('//OK') )
 
-    print response.status_code
+        canceled_airpot_notams += 1
 
-    cancel_response = json.loads ( response.text.lstrip('//OK') )
-
-    print cancel_response
+        print "Airport NOTAMS Canceled: %d" %(canceled_airpot_notams)
