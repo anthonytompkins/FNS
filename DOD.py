@@ -52,7 +52,7 @@ except:
 
 
 
-for i in range(15):
+for i in range(10):
 
     session.headers.update(
         {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
