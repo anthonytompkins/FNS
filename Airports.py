@@ -1,23 +1,24 @@
-import requests
+import requests, os
 import json, urllib, time, re, gzip, datetime, random, urllib3
 from urlparse import urlparse
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_cancelrate):
+
+def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate):
 
     #proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
     proxies = None
 
-
-
     # URLs
+    if _home_url[-1] != '/':
+        _home_url += '/'
+
     home_url = _home_url
-    xsrf_url = home_url + "/dnotam/xsrf"
-    login_url = home_url + "/dnotam/airportInfoService"
-    form_url = home_url + "/dnotam/dnotamFormHandler"
-    utility_url = home_url + "/dnotam/utilityService"
-    cancel_url = home_url + "/dnotam/airportInfoService"
+    xsrf_url = home_url + "dnotam/xsrf"
+    login_url = home_url + "dnotam/airportInfoService"
+    form_url = home_url + "dnotam/dnotamFormHandler"
+    utility_url = home_url + "dnotam/utilityService"
+    cancel_url = home_url + "dnotam/airportInfoService"
 
     # login email
     username = _username
@@ -27,7 +28,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     notams = int(_notams)
     length = int(_length)
     delay = int(_delay)
-    cancelrate = int(_cancelrate)
+    cancel_rate = int(_cancel_rate)
 
     submitted_notams = []
     canceled_notams = []
@@ -108,14 +109,14 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
         try:
             response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
 
-            if response.status_code != 200:
+            if response.status_code != 200 or 'Exception' in response.text:
                 print "Error Posting Airport Login Data"
                 time.sleep(30)
-                continue
+                os._exit(1)
         except:
             print "Error Posting Airport Login Data"
             time.sleep(30)
-            continue
+            os._exit(1)
 
 
         session.headers.update ( { 'Content-Type':'application/x-www-form-urlencoded' } )
@@ -207,7 +208,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
         time.sleep(delay)
 
-        if (submitted_airport_notams % cancelrate) == 0:
+        if (submitted_airport_notams % cancel_rate) == 0:
 
             time.sleep(60)
 
