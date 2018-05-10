@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, threading
 import json, urllib, time, re, gzip, datetime, random, urllib3
 from urlparse import urlparse
 
@@ -51,11 +51,11 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
         response = session.get(home_url, verify=False, proxies=proxies)
 
         if response.status_code != 200:
-            print "Error Getting NMPC Home URL"
+            print "%s - Error Getting NMPC Home URL" %(threading.current_thread().getName())
             time.sleep(30)
             exit(1)
     except:
-        print "Error Getting NMPC Home URL"
+        print "%s - Error Getting NMPC Home URL" %(threading.current_thread().getName())
         time.sleep(30)
         exit(1)
 
@@ -77,11 +77,11 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
             response = session.post(login_url,verify=False,json=login_data, proxies=proxies)
 
             if response.status_code != 200 or 'Exception' in response.text:
-                print "Error Posting NMPC Login Data"
+                print "%s - Error Posting NMPC Login Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 os._exit(1)
         except:
-            print "Error Posting NMPC Login Data"
+            print "%s - Error Posting NMPC Login Data" %(threading.current_thread().getName())
             time.sleep(30)
             os._exit(1)
 
@@ -145,11 +145,11 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
             response = session.post(form_url,verify=False,json=notam_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting NMPC NOTAM"
+                print "%s - Error Posting NMPC NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting NMPC NOTAM"
+            print "%s - Error Posting NMPC NOTAM" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -170,11 +170,11 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
             response = session.get(project_url, verify=False, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Getting NMPC Project Data"
+                print "%s - Error Getting NMPC Project Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Getting NMPC Project Data"
+            print "%s - Error Getting NMPC Project Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -186,7 +186,7 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
 
         submitted_notams.append(submission_response)
 
-        print "NMPC NOTAMS Submitted: %d" % (submitted_nmpc_notams)
+        print "%s - NMPC NOTAMS Submitted: %d" %(threading.current_thread().getName(), submitted_nmpc_notams)
 
         time.sleep(delay)
 
@@ -202,11 +202,11 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
                 response = session.post(cancel_url,verify=False,json=cancel_data, proxies=proxies)
 
                 if response.status_code != 200:
-                    print "Error Canceling NMPC NOTAM"
+                    print "%s - Error Canceling NMPC NOTAM" %(threading.current_thread().getName())
                     time.sleep(30)
                     continue
             except:
-                print "Error Canceling NMPC NOTAM"
+                print "%s - Error Canceling NMPC NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
 
@@ -214,4 +214,4 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
 
             canceled_nmpc_notams += 1
 
-            print "NMPC NOTAMS Canceled: %d" %(canceled_nmpc_notams)
+            print "%s - NMPC NOTAMS Canceled: %d" %(threading.current_thread().getName(),canceled_nmpc_notams)

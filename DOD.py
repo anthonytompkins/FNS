@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, threading
 import json, urllib, time, re, gzip, datetime, random, urllib3
 from urlparse import urlparse
 
@@ -59,11 +59,11 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
         response = session.get(home_url, verify=False, proxies=proxies)
 
         if response.status_code != 200:
-            print "Error Getting DOD Home URL"
+            print "%s - Error Getting DOD Home URL" %(threading.current_thread().getName())
             time.sleep(30)
             exit(1)
     except:
-        print "Error Getting DOD Home URL"
+        print "%s - Error Getting DOD Home URL"
         time.sleep(30)
         exit(1)
 
@@ -86,11 +86,11 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting DOD Utility Data"
+                print "%s - Error Posting DOD Utility Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting DOD Utility Data"
+            print "%s - Error Posting DOD Utility Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -100,11 +100,11 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting DOD XSRF Data"
+                print "%s - Error Posting DOD XSRF Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting DOD XSRF Data"
+            print "%s - Error Posting DOD XSRF Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -118,11 +118,11 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
 
             if response.status_code != 200 or 'Exception' in response.text:
-                print "Error Posting DOD Login Data"
+                print "%s - Error Posting DOD Login Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 os._exit(1)
         except:
-            print "Error Posting DOD Login Data"
+            print "%s - Error Posting DOD Login Data" %(threading.current_thread().getName())
             time.sleep(30)
             os._exit(1)
 
@@ -186,11 +186,11 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting DOD NOTAM"
+                print "%s - Error Posting DOD NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting DOD NOTAM"
+            print "%s - Error Posting DOD NOTAM" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -208,16 +208,16 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                 submission_response[item[0]] = item[1]
 
         if submission_response['errorCode'] != '0':
-            print response.text
+            print '%s - %s' %(threading.current_thread().getName(), response.text)
             continue
         else:
             submitted_dod_notams += 1
 
-        print "Submitted DOD NOTAMS: %d" %(submitted_dod_notams)
+        print "%s - Submitted DOD NOTAMS: %d" %(threading.current_thread().getName(), submitted_dod_notams)
 
 
         submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'],
-                                 'timestamp':datetime.datetime.utcnow.strftime('%A, %B %e, %Y %R')})
+                                 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
 
         time.sleep(delay)
 
@@ -242,11 +242,11 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
                 if response.status_code != 200:
-                    print "Erorr Canceling DOD NOTAM"
+                    print "%s - Erorr Canceling DOD NOTAM" %(threading.current_thread().getName())
                     time.sleep(30)
                     continue
             except:
-                print "Erorr Canceling DOD NOTAM"
+                print "%s - Erorr Canceling DOD NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
 
@@ -254,4 +254,4 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
 
             canceled_dod_notams += 1
 
-            print "Canceled DOD NOTAMS: %d" %(canceled_dod_notams)
+            print "%s - Canceled DOD NOTAMS: %d" %(threading.current_thread().getName(), canceled_dod_notams)

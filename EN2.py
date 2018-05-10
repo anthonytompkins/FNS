@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, threading
 import json, urllib, time, re, gzip, datetime, random, string
 from urlparse import urlparse
 
@@ -50,11 +50,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
         response = session.get(home_url, verify=False, proxies=proxies)
 
         if response.status_code != 200:
-            print "Error Getting EN2 Home Url"
+            print "%s - Error Getting EN2 Home Url" %(threading.current_thread().getName())
             time.sleep(30)
             exit(1)
     except:
-        print "Error Getting EN2 Home Url"
+        print "%s - Error Getting EN2 Home Url" %(threading.current_thread().getName())
         time.sleep(30)
         exit(1)
 
@@ -75,11 +75,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting EN2 Utility Data"
+                print "%s - Error Posting EN2 Utility Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting EN2 Utility Data"
+            print "%s - Error Posting EN2 Utility Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -90,11 +90,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting EN2 XSRF Data"
+                print "%s - Error Posting EN2 XSRF Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting XSRF EN2 Data"
+            print "%s - Error Posting XSRF EN2 Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -109,11 +109,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
 
             if response.status_code != 200 or 'Exception' in response.text:
-                print "Error Posting EN2 Login Data"
+                print "%s - Error Posting EN2 Login Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 os._exit(1)
         except:
-            print "Error Posting EN2 Login Data"
+            print "%s - Error Posting EN2 Login Data" %(threading.current_thread().getName())
             time.sleep(30)
             os._exit(1)
 
@@ -161,11 +161,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting EN2 NOTAM"
+                print "%s - Error Posting EN2 NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting EN2 NOTAM"
+            print "%s - Error Posting EN2 NOTAM" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -183,12 +183,12 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                 submission_response[item[0]] = item[1]
 
         if submission_response['errorCode'] != '0':
-            print response.text
+            print '%s - %s' %(threading.current_thread().getName(), response.text)
             continue
         else:
             submitted_en2_notams += 1
 
-        print "EN2 NOTAMS Submitted: %d" % (submitted_en2_notams)
+        print "%s - EN2 NOTAMS Submitted: %d" %(threading.current_thread().getName(), submitted_en2_notams)
 
         submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
 
@@ -220,11 +220,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
                 if response.status_code != 200:
-                    print "Error Canceling NOTAM: %s" %(response.text)
+                    print "%s - Error Canceling NOTAM: %s" %(threading.current_thread().getName(), response.text)
                     time.sleep(30)
                     continue
             except:
-                print "Error Canceling NOTAM"
+                print "%s - Error Canceling NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
 
@@ -232,4 +232,4 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
 
             canceled_en2_notams += 1
 
-            print "EN2 NOTAMS Canceled: %d" % (canceled_en2_notams)
+            print "%s - EN2 NOTAMS Canceled: %d" % (threading.current_thread().getName(), canceled_en2_notams)

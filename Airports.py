@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, threading
 import json, urllib, time, re, gzip, datetime, random, urllib3
 from urlparse import urlparse
 
@@ -52,11 +52,11 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     try:
         response = session.get(home_url, verify=False, proxies=proxies)
         if response.status_code != 200:
-            print "Error Getting Airport Home URL"
+            print "%s - Error Getting Airport Home URL" %(threading.current_thread().getName())
             time.sleep(30)
             return
     except:
-        print "Error Getting Airport Home URL"
+        print "%s - Error Getting Airport Home URL" %(threading.current_thread().getName())
         time.sleep(30)
         exit(1)
 
@@ -77,11 +77,11 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting Airport Utility Data"
+                print "%s - Error Posting Airport Utility Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting Airport Utility Data"
+            print "%s - Error Posting Airport Utility Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -92,11 +92,11 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting Airport XSRF Data"
+                print "%s - Error Posting Airport XSRF Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting Airport XSRF Data"
+            print "%s - Error Posting Airport XSRF Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -110,11 +110,11 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
 
             if response.status_code != 200 or 'Exception' in response.text:
-                print "Error Posting Airport Login Data"
+                print "%s - Error Posting Airport Login Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 os._exit(1)
         except:
-            print "Error Posting Airport Login Data"
+            print "%s - Error Posting Airport Login Data" %(threading.current_thread().getName())
             time.sleep(30)
             os._exit(1)
 
@@ -175,11 +175,11 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting Airport NOTAM"
+                print "%s - Error Posting Airport NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting Airport NOTAM"
+            print "%s - Error Posting Airport NOTAM" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -197,14 +197,14 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 submission_response[item[0]] = item[1]
 
         if submission_response['errorCode'] != '0':
-            print response.text
+            print '%s - %s' %(threading.current_thread().getName(), response.text)
             continue
         else:
             submitted_airport_notams += 1
 
         submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X')})
 
-        print "Airport NOTAMS Submitted: %d" %(submitted_airport_notams)
+        print "%s - Airport NOTAMS Submitted: %d" %(threading.current_thread().getName(), submitted_airport_notams)
 
         time.sleep(delay)
 
@@ -238,11 +238,11 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
                 if response.status_code != 200:
-                    print "Error Canceling Airport NOTAM: %s" %(item['notamNumber'])
+                    print "%s - Error Canceling Airport NOTAM: %s" %(threading.current_thread().getName(), item['notamNumber'])
                     time.sleep(30)
                     continue
             except:
-                print "Error Canceling Airport NOTAM: %s" % (item['notamNumber'])
+                print "%s - Error Canceling Airport NOTAM: %s" %(threading.current_thread().getName(), item['notamNumber'])
                 time.sleep(30)
                 continue
 
@@ -250,4 +250,4 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             canceled_airpot_notams += 1
 
-            print "Airport NOTAMS Canceled: %d" %(canceled_airpot_notams)
+            print "%s - Airport NOTAMS Canceled: %d" %(threading.current_thread().getName(), canceled_airpot_notams)

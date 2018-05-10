@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, threading
 import json, urllib, time, re, gzip, datetime, random, urllib3
 from urlparse import urlparse
 
@@ -54,11 +54,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
         response = session.get(home_url, verify=False, proxies=proxies)
 
         if response.status_code != 200:
-            print "Error Getting TechOps Home URL"
+            print "%s - Error Getting TechOps Home URL" %(threading.current_thread().getName())
             time.sleep(30)
             exit(1)
     except:
-        print "Error Getting TechOps Home URL"
+        print "%s - Error Getting TechOps Home URL" %(threading.current_thread().getName())
         time.sleep(30)
         exit(1)
 
@@ -79,11 +79,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(utility_url, data=utility_data, verify=False, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting TechOps Utility Data"
+                print "%s - Error Posting TechOps Utility Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting TechOps Utility Data"
+            print "%s - Error Posting TechOps Utility Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -93,11 +93,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting TechOps XSRF Data"
+                print "%s - Error Posting TechOps XSRF Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting TechOps XSRF Data"
+            print "%s - Error Posting TechOps XSRF Data" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -111,11 +111,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(login_url,verify=False,data=login_data, proxies=proxies)
 
             if response.status_code != 200 or 'Exception' in response.text:
-                print "Error Posting TechOps Login Data"
+                print "%s - Error Posting TechOps Login Data" %(threading.current_thread().getName())
                 time.sleep(30)
                 os._exit(1)
         except:
-            print "Error Posting TechOps Login Data"
+            print "%s - Error Posting TechOps Login Data" %(threading.current_thread().getName())
             time.sleep(30)
             os._exit(1)
 
@@ -182,11 +182,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
             if response.status_code != 200:
-                print "Error Posting TechOps NOTAM"
+                print "%s - Error Posting TechOps NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
         except:
-            print "Error Posting TechOps NOTAM"
+            print "%s - Error Posting TechOps NOTAM" %(threading.current_thread().getName())
             time.sleep(30)
             continue
 
@@ -204,14 +204,14 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 submission_response[item[0]] = item[1]
 
         if submission_response['errorCode'] != '0':
-            print response.text
+            print '%s - %s' %(threading.current_thread().getName(), response.text)
             continue
         else:
             submitted_techops_notams += 1
 
         submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
 
-        print "TechOps Submitted NOTAMS: %d" %(submitted_techops_notams)
+        print "%s - TechOps Submitted NOTAMS: %d" %(threading.current_thread().getName(), submitted_techops_notams)
 
         time.sleep(delay)
 
@@ -241,11 +241,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
                 if response.status_code != 200:
-                    print "Error Canceling TechOps NOTAM"
+                    print "%s - Error Canceling TechOps NOTAM" %(threading.current_thread().getName())
                     time.sleep(30)
                     continue
             except:
-                print "Error Canceling TechOps NOTAM"
+                print "%s - Error Canceling TechOps NOTAM" %(threading.current_thread().getName())
                 time.sleep(30)
                 continue
 
@@ -253,4 +253,4 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             canceled_techops_notams += 1
 
-            print "TechOps Canceled NOTAMS: %d" %(canceled_techops_notams)
+            print "%s - TechOps Canceled NOTAMS: %d" %(threading.current_thread().getName(), canceled_techops_notams)
