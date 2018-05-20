@@ -156,6 +156,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             'FORM_TYPE' : 'ENII'
         }
 
+        submission_time = datetime.datetime.utcnow()
 
         try:
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
@@ -188,9 +189,14 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
         else:
             submitted_en2_notams += 1
 
-        print "%s - EN2 NOTAMS Submitted: %d" %(threading.current_thread().getName(), submitted_en2_notams)
+        submission_time = (datetime.datetime.utcnow() - submission_time).total_seconds()
 
-        submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
+        submitted_notams.append({'notamNumber':submission_response['notamNumber'],
+                                 'transactionId':submission_response['transactionId'],
+                                 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R'),
+                                 'responsetime':submission_time})
+
+        print "%s - EN2 NOTAMS Submitted: %d" % (threading.current_thread().getName(), submitted_en2_notams)
 
         time.sleep(delay)
 
@@ -199,6 +205,10 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             time.sleep(60)
 
             session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
+
+            for notams in submitted_notams:
+                for k,v in notams.items():
+                    print k, v
 
             item = submitted_notams.pop(0)
 

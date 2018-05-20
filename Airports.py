@@ -1,13 +1,28 @@
-import requests, os, threading
+import requests, os, threading, logging
 import json, urllib, time, re, gzip, datetime, random, urllib3
 from urlparse import urlparse
 
 
 
-def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate):
+def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
 
     #proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
     proxies = None
+
+    #create log file
+    log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
+    logger = logging.getLogger(threading.current_thread().getName())
+    logger.setLevel(logging.INFO)
+
+    handler = logging.FileHandler(log_file_path)
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
 
     # URLs
     if _home_url[-1] != '/':
@@ -25,7 +40,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     # password
     password = _password
 
-    notams = int(_notams)
+    notams_to_submit = int(_notams)
     length = int(_length)
     delay = int(_delay)
     cancel_rate = int(_cancel_rate)
@@ -60,7 +75,10 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
         time.sleep(30)
         exit(1)
 
-    for i in range(notams):
+    index = 0
+    while index < notams_to_submit:
+
+        index += 1
 
         session.headers.update(
             {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -171,6 +189,8 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 'xsrfToken' : xsrfToken[2][1]
         }
 
+        submission_time = datetime.datetime.utcnow()
+
         try:
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
@@ -198,13 +218,16 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
         if submission_response['errorCode'] != '0':
             print '%s - %s' %(threading.current_thread().getName(), response.text)
+            index -= 1
             continue
         else:
             submitted_airport_notams += 1
 
-        submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X')})
+        submission_time = (datetime.datetime.utcnow() - submission_time).total_seconds()
 
-        print "%s - Airport NOTAMS Submitted: %d" %(threading.current_thread().getName(), submitted_airport_notams)
+        submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X'), 'responsetime':str(submission_time)})
+
+        print "%s - Airport NOTAM Submitted: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), submission_response['notamNumber'], submission_time)
 
         time.sleep(delay)
 
@@ -214,7 +237,15 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
+            for notams in submitted_notams:
+                log_message = ''
+                for k,v in notams.items():
+                    log_message += '%s=%s ' %(k, v)
+                logger.info(log_message)
+
             item = submitted_notams.pop(0)
+
+            del submitted_notams[:]
 
             cancel_data = '7|2|74|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
                   'com.google.gwt.user.client.rpc.XsrfToken/4254043109|7BD738F38104A4011DC17A5B8F3804D0|' \
@@ -234,6 +265,8 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                   '|18668|66|0|0|0|0|0|0|0|62|67|65|0|64|0|65|0|67|15709|68|0|0|0|0|0|0|0|62|69|65|0|64|0|70|0|69|6384|71|0|0|0|0|0|0|0|39|72|0|0|0|10|0|10|10|0' \
                   '|WKjEd2u|73|74|64|42|WKjEd2u|0|4|2018|10|10|'
 
+            cancel_time = datetime.datetime.utcnow()
+
             try:
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
@@ -246,8 +279,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 time.sleep(30)
                 continue
 
-            canceled_notams.append(item)
+            cancel_time = (datetime.datetime.utcnow() - cancel_time).total_seconds()
 
-            canceled_airpot_notams += 1
+            print "%s - Airport NOTAM Canceled: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), item['notamNumber'], cancel_time)
 
-            print "%s - Airport NOTAMS Canceled: %d" %(threading.current_thread().getName(), canceled_airpot_notams)

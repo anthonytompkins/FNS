@@ -182,6 +182,8 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
 
         }
 
+        submission_time = datetime.datetime.utcnow()
+
         try:
             response = session.post(form_url,verify=False,data=notam_data, proxies=proxies)
 
@@ -213,11 +215,14 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
         else:
             submitted_dod_notams += 1
 
+        submission_time = (datetime.datetime.utcnow() - submission_time).total_seconds()
+
         print "%s - Submitted DOD NOTAMS: %d" %(threading.current_thread().getName(), submitted_dod_notams)
 
-
-        submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'],
-                                 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R')})
+        submitted_notams.append({'notamNumber':submission_response['notamNumber'],
+                                 'transactionId':submission_response['transactionId'],
+                                 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R'),
+                                 'responsetime':submission_time})
 
         time.sleep(delay)
 
@@ -226,6 +231,10 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             time.sleep(60)
 
             session.headers.update({'Content-Type': 'text/x-gwt-rpc; charset=utf-8'})
+
+            for notams in submitted_notams:
+                for k,v in notams.items():
+                    print k, v
 
             item = submitted_notams.pop(0)
 
