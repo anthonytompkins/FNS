@@ -88,5 +88,5 @@ config.set('TechOps', 'Cancel_Rate', '10')
 
 
 # Writing our configuration file to 'example.cfg'
-with open('NMG.cfg', 'wb') as configfile:
+with open('config.cfg', 'wb') as configfile:
     config.write(configfile)

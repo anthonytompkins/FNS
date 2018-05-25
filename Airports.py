@@ -1,7 +1,6 @@
 import requests, os, threading, logging
-import json, urllib, time, re, gzip, datetime, random, urllib3
+import json, time, datetime, random
 from urlparse import urlparse
-
 
 
 def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
@@ -75,10 +74,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
         time.sleep(30)
         exit(1)
 
-    index = 0
-    while index < notams_to_submit:
-
-        index += 1
+    while submitted_airport_notams < notams_to_submit:
 
         session.headers.update(
             {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -218,7 +214,6 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
         if submission_response['errorCode'] != '0':
             print '%s - %s' %(threading.current_thread().getName(), response.text)
-            index -= 1
             continue
         else:
             submitted_airport_notams += 1
@@ -227,7 +222,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
         submitted_notams.append({'notamNumber':submission_response['notamNumber'], 'transactionId':submission_response['transactionId'], 'timestamp':datetime.datetime.utcnow().strftime('%A, %B %d, %Y %X'), 'responsetime':str(submission_time)})
 
-        print "%s - Airport NOTAM Submitted: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), submission_response['notamNumber'], submission_time)
+        print "%s - Airport NOTAM %d Submitted: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), submitted_airport_notams, submission_response['notamNumber'], submission_time)
 
         time.sleep(delay)
 
@@ -238,9 +233,9 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
             for notams in submitted_notams:
-                log_message = ''
+                log_message = 'SUBMIT - '
                 for k,v in notams.items():
-                    log_message += '%s=%s ' %(k, v)
+                    log_message += '%s=%s    ' %(k, v)
                 logger.info(log_message)
 
             item = submitted_notams.pop(0)
@@ -281,5 +276,10 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             cancel_time = (datetime.datetime.utcnow() - cancel_time).total_seconds()
 
-            print "%s - Airport NOTAM Canceled: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), item['notamNumber'], cancel_time)
+            canceled_airpot_notams += 1
+
+            print "%s - Airport NOTAM %d Canceled: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), canceled_airpot_notams,item['notamNumber'], cancel_time)
+
+            log_message = 'CANCEL - notamNumber=%s    responsetime=%d seconds' %(item['notamNumber'], cancel_time)
+            logger.info(log_message)
 

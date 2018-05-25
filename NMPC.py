@@ -1,13 +1,26 @@
-import requests, os, threading
-import json, urllib, time, re, gzip, datetime, random, urllib3
+import requests, os, threading, logging
+import json, time, datetime, random
 from urlparse import urlparse
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_delay,_cancel_rate):
+def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_delay,_cancel_rate,_log_file_path):
 
     #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
     proxies = None
+
+    # create log file
+    log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
+    logger = logging.getLogger(threading.current_thread().getName())
+    logger.setLevel(logging.INFO)
+
+    handler = logging.FileHandler(log_file_path)
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
 
     project_id = _project_id
 
@@ -26,7 +39,7 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
     # password
     password = _password
 
-    notams = int(_notams)
+    notams_to_submit = int(_notams)
     length = int(_length)
     delay = int(_delay)
     cancel_rate = int(_cancel_rate)
@@ -59,7 +72,7 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
         time.sleep(30)
         exit(1)
 
-    for i in range(notams):
+    while submitted_nmpc_notams < notams_to_submit:
 
         session.headers.update(
             {'Accept': 'text/plain, application/json, */*',
@@ -201,7 +214,7 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
                     submitted_notams.append(submission_response)
                     break
 
-        print "%s - NMPC NOTAMS Submitted: %d" %(threading.current_thread().getName(), submitted_nmpc_notams)
+        print "%s - NMPC NOTAM %d Submitted: NOTAM Number = %s Response Time = %d seconds" % (threading.current_thread().getName(), submitted_nmpc_notams, submission_response['notamNumber'], submission_time)
 
         time.sleep(delay)
 
@@ -210,12 +223,18 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
             time.sleep(60)
 
             for notams in submitted_notams:
+                log_message = 'SUBMIT - '
                 for k,v in notams.items():
-                    print k, v
+                    log_message += '%s=%s    ' %(k, v)
+                logger.info(log_message)
 
             item = submitted_notams.pop(0)
 
+            del submitted_notams[:]
+
             cancel_data = {'transactionIds':[item['transactionId']],'reason':'Facility Return to Service'}
+
+            cancel_time = datetime.datetime.utcnow()
 
             try:
                 response = session.post(cancel_url,verify=False,json=cancel_data, proxies=proxies)
@@ -229,10 +248,13 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
                 time.sleep(30)
                 continue
 
-            canceled_notams.append(item)
+            cancel_time = (datetime.datetime.utcnow() - cancel_time).total_seconds()
 
             canceled_nmpc_notams += 1
 
-            print "%s - NMPC NOTAMS Canceled: %d" %(threading.current_thread().getName(),canceled_nmpc_notams)
+            print "%s - NMPC NOTAM %d Canceled: NOTAM Number = %s Response Time = %d seconds" % (threading.current_thread().getName(), canceled_nmpc_notams, item['notamNumber'], cancel_time)
+
+            log_message = 'CANCEL - notamNumber=%s    responsetime=%d seconds' % (item['notamNumber'], cancel_time)
+            logger.info(log_message)
 
 

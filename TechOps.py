@@ -1,13 +1,26 @@
-import requests, os, threading
-import json, urllib, time, re, gzip, datetime, random, urllib3
+import requests, os, threading, logging
+import json, time, datetime, random
 from urlparse import urlparse
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate):
+def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
 
     #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
     proxies = None
+
+    # create log file
+    log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
+    logger = logging.getLogger(threading.current_thread().getName())
+    logger.setLevel(logging.INFO)
+
+    handler = logging.FileHandler(log_file_path)
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
 
     # URLs
     if _home_url[-1] != '/':
@@ -25,7 +38,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     # password
     password = _password
 
-    notams = int(_notams)
+    notams_to_submit = int(_notams)
     length = int(_length)
     delay = int(_delay)
     cancel_rate = int(_cancel_rate)
@@ -62,7 +75,8 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
         time.sleep(30)
         exit(1)
 
-    for i in range(notams):
+    submitted_techops_notams = 0
+    while submitted_techops_notams < notams_to_submit:
 
         session.headers.update(
             {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -218,7 +232,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                                  'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R'),
                                  'responsetime':submission_time})
 
-        print "%s - TechOps Submitted NOTAMS: %d" %(threading.current_thread().getName(), submitted_techops_notams)
+        print "%s - TechOps NOTAM %d Submitted: NOTAM Number = %s Response Time = %d seconds" % ( threading.current_thread().getName(), submitted_techops_notams, submission_response['notamNumber'], submission_time)
 
         time.sleep(delay)
 
@@ -229,10 +243,14 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
             for notams in submitted_notams:
+                log_message = 'SUBMIT - '
                 for k,v in notams.items():
-                    print k, v
+                    log_message += '%s=%s    ' %(k, v)
+                logger.info(log_message)
 
             item = submitted_notams.pop(0)
+
+            del submitted_notams[:]
 
             cancel_data = '7|2|83|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
                       'com.google.gwt.user.client.rpc.XsrfToken/4254043109|6662D02745FB83DF3C87D3EB478A29C1|gov.faa.aim.dnotam.ui.client.AirportInformationService|' \
@@ -248,6 +266,8 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                       '|0|0|32|0|62|3|73|74|65|0|74|0|0|0|75|15|76|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|77|10|78|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|79|20|80|0|0|0|0|0|0|0|28|81|0|0|0|10|0|10|10|0|' \
                       'WK1YS_P|82|83|74|53|WK1YS_P|0|4|2018|10|10|'
 
+            cancel_time = datetime.datetime.utcnow()
+
             try:
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
 
@@ -260,8 +280,11 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 time.sleep(30)
                 continue
 
-            canceled_notams.append(item)
+            cancel_time = (datetime.datetime.utcnow() - cancel_time).total_seconds()
 
             canceled_techops_notams += 1
 
-            print "%s - TechOps Canceled NOTAMS: %d" %(threading.current_thread().getName(), canceled_techops_notams)
+            print "%s - TechOps NOTAM %d Canceled: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), canceled_techops_notams,item['notamNumber'], cancel_time)
+
+            log_message = 'CANCEL - notamNumber=%s    responsetime=%d seconds' %(item['notamNumber'], cancel_time)
+            logger.info(log_message)

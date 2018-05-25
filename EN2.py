@@ -1,11 +1,26 @@
-import requests, os, threading
-import json, urllib, time, re, gzip, datetime, random, string
+import requests, os, threading, logging
+import json, time, datetime, random, string
 from urlparse import urlparse
 
-def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate):
+def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
 
     #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
     proxies = None
+
+    # create log file
+    log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
+    logger = logging.getLogger(threading.current_thread().getName())
+    logger.setLevel(logging.INFO)
+
+    handler = logging.FileHandler(log_file_path)
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
 
     # URLs
     if _home_url[-1] != '/':
@@ -23,7 +38,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
     # password
     password = _password
 
-    notams = int(_notams)
+    notams_to_submit = int(_notams)
     length = int(_length)
     delay = int(_delay)
     cancel_rate = int(_cancel_rate)
@@ -58,7 +73,8 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
         time.sleep(30)
         exit(1)
 
-    for i in range(notams):
+    submitted_en2_notams = 0
+    while submitted_en2_notams < notams_to_submit:
 
         session.headers.update(
             {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -196,7 +212,8 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                                  'timestamp':datetime.datetime.utcnow().strftime('%A, %B %e, %Y %R'),
                                  'responsetime':submission_time})
 
-        print "%s - EN2 NOTAMS Submitted: %d" % (threading.current_thread().getName(), submitted_en2_notams)
+
+        print "%s - EN2 NOTAM %d Submitted: NOTAM Number = %s Response Time = %d seconds" % (threading.current_thread().getName(), submitted_en2_notams, submission_response['notamNumber'], submission_time)
 
         time.sleep(delay)
 
@@ -207,10 +224,14 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             session.headers.update ( { 'Content-Type':'text/x-gwt-rpc; charset=utf-8' } )
 
             for notams in submitted_notams:
+                log_message = 'SUBMIT - '
                 for k,v in notams.items():
-                    print k, v
+                    log_message += '%s=%s    ' %(k, v)
+                logger.info(log_message)
 
             item = submitted_notams.pop(0)
+
+            del submitted_notams[:]
 
             cancel_data = '7|2|64|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' \
                       'A9C9AB7C56FD2B82EF20831A6FE8ABA1|gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611|' \
@@ -225,6 +246,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                       '12|7|22|13|23|14|14|23|23|11|3|12|2|24|25|12|2|13|26|12|2|16|27|10|28|10|0|10|0|29|30|WLADvey|31|13|10|1|32|17|33|10|34|35|36|30|3|10|37|0|0|38|5|39|40|41|39|42|43|39|44' \
                       '|45|39|46|47|39|48|16|10|0|2|0|0|38|3|49|50|24|51|0|0|52|49|53|13|54|0|0|52|49|55|16|56|0|0|52|57|29|58|1|59|10|0|10|10|0|60|0|0|WLADvey|61|62|63|30|WLADvey|0|2018|10|64|'
 
+            cancel_time = datetime.datetime.utcnow()
 
             try:
                 response = session.post(cancel_url,verify=False,data=cancel_data, proxies=proxies)
@@ -238,8 +260,11 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
                 time.sleep(30)
                 continue
 
-            canceled_notams.append(item)
+            cancel_time = (datetime.datetime.utcnow() - cancel_time).total_seconds()
 
             canceled_en2_notams += 1
 
-            print "%s - EN2 NOTAMS Canceled: %d" % (threading.current_thread().getName(), canceled_en2_notams)
+            print "%s - EN2 NOTAM %d Canceled: NOTAM Number = %s Response Time = %d seconds" %(threading.current_thread().getName(), canceled_en2_notams,item['notamNumber'], cancel_time)
+
+            log_message = 'CANCEL - notamNumber=%s    responsetime=%d seconds' %(item['notamNumber'], cancel_time)
+            logger.info(log_message)
