@@ -37,13 +37,17 @@ Installation
 
             apt install git
 
-        6. Use the exit command to switch to a non-root account
+        6. Execute the following command to change file permissions of /opt/ directory
 
-        7. Execute the following command to change the current working directory
+            chmod -R 777 /opt/
+
+        7. Use the exit command to switch to a non-root account
+
+        8. Execute the following command to change the current working directory
 
             cd /opt/
 
-        8. Execute the following command to clone the NOTAM Manager Load tool repository
+        9. Execute the following command to clone the NOTAM Manager Load tool repository
 
             git clone https://github.com/anthonytompkins/FNS.git
 
@@ -57,22 +61,17 @@ Installation
 
             yum update
 
-        3. Execute the following command to install the python 2.7 distribution
-
-            yum install python-minimal
-
-        4. Execute the following commands to install the required python modules
-
-            yum install python-pip
-            pip install requests urllib3
-
-        5. Execute the following command to install GIT, a software version control tool
+        3. Execute the following command to install GIT, a software version control tool
 
             yum install git
 
-        6. Use the exit command to switch to a non-root account
+        4. Execute the following command to change file permissions of /opt/ directory
 
-        7. Execute the following command to change the current working directory
+            chmod -R 777 /opt/
+
+        5. Use the exit command to switch to a non-root account
+
+        6. Execute the following command to change the current working directory
 
             cd /opt/
 
