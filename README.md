@@ -97,7 +97,7 @@ Configuration
 
     To configure the tool, navigate to the /opt/FNS/ directory and use vi or nano to edit the config.cfg file.
 
-    If you encounter a issue with the config file, execute the following command from the /opt/FNS/ directory to create a new default config file.
+    If you encounter an issue with the config file, execute the following command from the /opt/FNS/ directory to create a new default config file.
 
         python configGen.py
 
