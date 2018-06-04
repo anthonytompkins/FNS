@@ -83,14 +83,14 @@ Configuration
 
     The tool uses a configuration file, config.cfg, that contains the following parameters for each user type.
 
-        · Threads - Amount of instances of this user type
+        · Threads - Amount of instances of this user type (minimum value: 1)
         · Home_url – URL of the login page for the user type
         · Username – Username for the user type account
         · Password – Password for the user type account
-        · Notams - Amount of NOTAMS to submit per thread
-        · Delay - Time, in seconds, between NOTAM submission attempts
-        · Length - Duration, in hours, each NOTAM is active
-        · Cancel_rate - Amount of NOTAMS to submit before canceling a previously submitted NOTAM
+        · Notams - Amount of NOTAMS to submit per thread (minimum value: 1)
+        · Delay - Time, in seconds, between NOTAM submission attempts (minimum value: 0)
+        · Length - Duration, in hours, each NOTAM is active (minimum value: 1)
+        · Cancel_rate - Amount of NOTAMS to submit before canceling a previously submitted NOTAM (minimum value: 1)
 
     The NMPC user type has an additional parameter, ProjectId, which represents an existing project associated with the NMPC user account. You must login as the NMPC user, create a project, and retrieve the ProjectId before configuring the tool.
 
@@ -114,9 +114,18 @@ Execution
 
           python main.py
 
+    To stop the tool, press CTRL+C repeatedly until the command line prompt returns
+
     To run the tool in the background, execute the following command.
 
-          python main.py &
+	    python main.py &
+
+    To stop the tool from running in the background, execute the following:
+
+	    fg
+
+	    Press CTRL+C repeatedly until the command line prompt returns
+
 
 Logging
 
