@@ -24,11 +24,6 @@ def dod_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
     # add the handlers to the logger
     logger.addHandler(handler)
 
-    # login email
-    username = "nmdod.test@faa.gov"
-    # password
-    password = "Test123!"
-
     # URLs
     if _home_url[-1] != '/':
         _home_url += '/'

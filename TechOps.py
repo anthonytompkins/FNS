@@ -4,8 +4,8 @@ from urlparse import urlparse
 
 def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
 
-    #proxies = { 'http': 'http://localhost:8585', 'https': 'http://localhost:8585'}
-    proxies = None
+    proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
+    #proxies = None
 
     # create log file
     log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
@@ -49,9 +49,9 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     submitted_techops_notams = 0
     canceled_techops_notams = 0
 
-    xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
+    xsrf_data = "7|0|4|https://155.178.63.75/dnotam2/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
-    utility_data = '7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
+    utility_data = '7|0|4|https://155.178.63.75/dnotam2/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
 
     # A request session
     session = requests.Session()
@@ -83,8 +83,8 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
              'Accept-Language': 'en-US,en;q=0.5',
              'Accept-Encoding': 'gzip, deflate',
              'Content-Type': 'text/x-gwt-rpc; charset=utf-8',
-             'X-GWT-Permutation': '91DAC5113A41AD9FACB523FF735B4CB6',
-             'X-GWT-Module-Base': 'https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/',
+             'X-GWT-Permutation': '04700B765F96A728C7C52F770DBF68B8',
+             'X-GWT-Module-Base': 'https://155.178.63.75/dnotam2/dnotam/',
              'Referer': 'https://notamdemo.aim.nas.faa.gov/dnotamtest/'
              }
         )
@@ -101,7 +101,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             time.sleep(30)
             continue
 
-        session.cookies.update( { 'JSESSIONIDXSRFH':'317101520124880832' } )
+        session.cookies.update( { 'JSESSIONIDXSRFH':'178461532378352670' } )
 
         try:
             response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
@@ -117,7 +117,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
         xsrfToken = json.loads ( response.text.lstrip('//OK') )
 
-        login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
+        login_data = '7|2|9|https://155.178.63.75/dnotam2/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
                      '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'\
                      + username + '|' + password +'|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
 
@@ -156,7 +156,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             'CONDITION_TEXT' : '',
             'START_DATE' : [start_date.strftime('%m/%d/%Y'), start_date.strftime('%m/%d/%Y')],
             'END_DATE' : [end_date.strftime('%m/%d/%Y'), end_date.strftime('%m/%d/%Y')],
-            'USER_ID' : ['8004','Anthony Tompkins'],
+            'USER_ID' : ['24012','Niru Venreddy'],
             'TRANSACTION_ID' : 'undefined',
             'FEATURE_ID' : '6160',
             'SCENARIO_ID' : '504',
@@ -252,19 +252,20 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             del submitted_notams[:]
 
-            cancel_data = '7|2|83|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
-                      'com.google.gwt.user.client.rpc.XsrfToken/4254043109|6662D02745FB83DF3C87D3EB478A29C1|gov.faa.aim.dnotam.ui.client.AirportInformationService|' \
-                      'cancelNotam|java.lang.String/2004016611|gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|'+ item['transactionId'] +'||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;' \
-                      '/2600011424|11|0|Classification-All|-1|12|Communications|22|COM|1|13|Lighted Aids|75|LIGHTED AID|2|14|Navaids|25|NAV|3|15|Radar|76|RADAR|4|16|Weather' \
-                      '|77|WEATHER|5|43|Obstruction|OBST|18|AOCC-Atlantic OCC|10|MOCC-Mid States OCC|20|POCC-Pacific OCC|http://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/index.html' \
-                      '|5555555555|java.util.Date/3385151746|Anthony|http://notamdemo.aim.nas.faa.gov/fnshelp/nmoccuserguide.pdf|172.26.22.194|FAA|Tompkins|Success' \
-                      '|nmtech.test@faa.gov|Test123!|java.util.ArrayList/4159755760|gov.faa.aim.dnotam.ui.dto.UserPreference/1057420195|EXPIRY_NOTIFICATION_HRS|48|SHOWPAGINATION|YES|SHOWMAP' \
-                      '|NO|ROWLIMIT|50|CANCEL_DAYS|gov.faa.aim.dnotam.ui.dto.UserRole/1873077557|OCC|AOCC|Atlantic OCC|MOCC|Mid States OCC|POCC|Pacific OCC|5612f2315bb61cf410caf1636ea5' \
-                      '|Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:59.0) Gecko/20100101 Firefox/59.0|8004|1|2|3|4|5|6|3|7|8|7|9|8|0|10|10|0|0|0|11|7|12|8|13|14|15|14|14|0|15|16|12|8|17|13|18' \
-                      '|14|19|20|18|21|12|8|22|13|23|14|24|25|23|26|12|8|27|13|28|14|29|30|28|31|12|8|32|13|33|14|34|35|33|36|12|8|37|13|38|14|39|40|38|41|12|8|42|13|43|14|14|44|43|45|11|3|12|2|32' \
-                      '|46|12|2|47|48|12|2|49|50|10|0|51|10|10|0|52|0|53|WK1YS_P|11|10|0|54|55|15|56|57|58|0|32|0|59|60|0|44|3|0|0|10|61|0|0|90|62|5|63|64|65|63|66|67|63|68|69|63|70|71|63|72|26|10' \
-                      '|0|0|32|0|62|3|73|74|65|0|74|0|0|0|75|15|76|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|77|10|78|0|0|0|0|0|0|0|73|74|65|0|74|0|0|0|79|20|80|0|0|0|0|0|0|0|28|81|0|0|0|10|0|10|10|0|' \
-                      'WK1YS_P|82|83|74|53|WK1YS_P|0|4|2018|10|10|'
+            cancel_data = '7|0|77|https://155.178.63.75/dnotam2/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F' \
+                          '|gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611' \
+                          '|gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|' + item['transactionId'] + '||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;/2600011424' \
+                          '|11|0|Classification-All|-1|12|Communications|22|COM|1|13|Lighted Aids|75|LIGHTED AID|2|14|Navaids|25|NAV|3|15|Radar' \
+                          '|76|RADAR|4|16|Weather|77|WEATHER|5|43|Obstruction|OBST|18|AOCC-AOCC|20|POCC-POCC|http://155.178.63.75:9081/dnotam2/dnotam/index.html' \
+                          '|9090090099|java.util.Date/3385151746|Niru|https://notams.aim.faa.gov/nmoccuserguide.pdf|10.182.199.52|QA Analyst' \
+                          '|Venreddy|Success|niru.venreddy@techops.gov|Passwd1#|java.util.ArrayList/4159755760|gov.faa.aim.dnotam.ui.dto.UserPreference/1057420195' \
+                          '|EXPIRY_NOTIFICATION_HRS|48|SHOWPAGINATION|YES|SHOWMAP|NO|ROWLIMIT|50|CANCEL_DAYS|gov.faa.aim.dnotam.ui.dto.UserRole/1873077557' \
+                          '|OCC|AOCC|POCC|73GaU5txY8hpDOUEHQZQ00p|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/67.0.3396.99 Chrome/67.0.3396.99 Safari/537.36' \
+                          '|24012|72BF830FD055B93A35324F04396F97E5| Issued NOTAM is incorrect.|1|2|3|4|3|5|6|5|7|6|0|8|8|0|0|0|9|7|10|8|11|12|13|12|12|0|13|14' \
+                          '|10|8|15|11|16|12|17|18|16|19|10|8|20|11|21|12|22|23|21|24|10|8|25|11|26|12|27|28|26|29|10|8|30|11|31|12|32|33|31|34|10|8|35|11' \
+                          '|36|12|37|38|36|39|10|8|40|11|41|12|12|42|41|43|9|2|10|2|30|44|10|2|45|46|8|0|47|8|8|0|48|0|49|WTI$itu|23|8|0|50|51|21|52|53|54|0' \
+                          '|30|0|55|56|0|9|6|0|0|8|57|0|0|90|58|5|59|60|61|59|62|63|59|64|65|59|66|67|59|68|24|8|0|0|32|0|58|2|69|70|65|0|70|0|0|0|71|15|71|0|0|0' \
+                          '|0|0|0|0|69|70|65|0|70|0|0|0|72|20|72|0|0|0|0|0|0|0|55|73|0|0|0|8|0|8|8|0|WTI$itu|74|75|70|49|WTI$itu|0|76|2018|8|77|'
 
             cancel_time = datetime.datetime.utcnow()
 
