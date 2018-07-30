@@ -4,8 +4,8 @@ from urlparse import urlparse
 
 def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
 
-    proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
-    #proxies = None
+    #proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
+    proxies = None
 
     # create log file
     log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
