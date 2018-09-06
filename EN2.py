@@ -49,9 +49,10 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
     submitted_en2_notams = 0
     canceled_en2_notams = 0
 
-    xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|E1EF26ED6384B9AF4934C71870F2E259|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
+    xsrf_data = "7|0|4|https://155.178.63.75/en2/en2/|E1EF26ED6384B9AF4934C71870F2E259|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
-    utility_data = '7|0|4|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|8C30C5E7368E7D64D2853D893E5C2495|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
+    utility_data = '7|0|4|https://155.178.63.75/en2/en2/|8C30C5E7368E7D64D2853D893E5C2495|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
+
     # A request session
     session = requests.Session()
 
@@ -114,9 +115,9 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             time.sleep(30)
             continue
 
-        xsrfToken = json.loads ( response.text.lstrip('//OK') )
+        xsrfToken = json.loads ( response.text.lstrip('//OK') )[2][1]
 
-        login_data = '7|2|9|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
+        login_data = '7|2|9|https://155.178.63.75/en2/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken + \
                      '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'\
                      + username + '|' + password + '|1|2|3|4|5|6|2|7|7|8|9|'
 
@@ -199,7 +200,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             if item.__len__() == 2:
                 submission_response[item[0]] = item[1]
 
-        if submission_response['errorCode'] != '0':
+        if 'errorCode' not in submission_response.keys() or submission_response['errorCode'] != '0':
             print '%s - %s' %(threading.current_thread().getName(), response.text)
             continue
         else:
@@ -233,8 +234,8 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
 
             del submitted_notams[:]
 
-            cancel_data = '7|2|64|https://notamdemo.aim.nas.faa.gov/en2plus/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' \
-                      'A9C9AB7C56FD2B82EF20831A6FE8ABA1|gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611|' \
+            cancel_data = '7|2|64|https://155.178.63.75/en2/en2/|0196662329E3ED777244D915ABB428BD|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' \
+                      + xsrfToken +'|gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611|' \
                       'gov.faa.aim.dnotam.ui.dto.UserTO/1465918794|' + item['transactionId'] + '||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;/2600011424|' \
                       '1|0|FPA|2|ABQ|4|COU|7|FTW|12|PNM|3|CSA-Central Area|ESA-Eastern Area|WSA-Western Area|http://notamdemo.aim.nas.faa.gov/en2plus/en2/index.html|' \
                       '5555555555|java.util.Date/3385151746|1523641648182|Anthony|172.26.22.194|Tompkins|Success|en2.test@faa.gov|Test123!|java.util.ArrayList/4159755760|' \
