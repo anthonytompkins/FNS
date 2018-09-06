@@ -49,9 +49,9 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     submitted_techops_notams = 0
     canceled_techops_notams = 0
 
-    xsrf_data = "7|0|4|https://155.178.63.75/dnotam2/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
+    xsrf_data = "7|0|4|https://155.178.63.75/dnotam/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
-    utility_data = '7|0|4|https://155.178.63.75/dnotam2/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
+    utility_data = '7|0|4|https://155.178.63.75/dnotam/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
 
     # A request session
     session = requests.Session()
@@ -115,9 +115,9 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             time.sleep(30)
             continue
 
-        xsrfToken = json.loads ( response.text.lstrip('//OK') )
+        xsrfToken = json.loads ( response.text.lstrip('//OK') )[2][1]
 
-        login_data = '7|2|9|https://155.178.63.75/dnotam2/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
+        login_data = '7|2|9|https://155.178.63.75/dnotam/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken + \
                      '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'\
                      + username + '|' + password +'|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
 
@@ -189,7 +189,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             'NOTAM_R_NUMBER' : 'undefined',
             'USER_TYPE' : 'OCC',
             'RMLS_LOG_ID' : '123',
-            'xsrfToken' : xsrfToken[2][1]
+            'xsrfToken' : xsrfToken
         }
 
         submission_time = datetime.datetime.utcnow()
@@ -252,7 +252,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             del submitted_notams[:]
 
-            cancel_data = '7|0|77|https://155.178.63.75/dnotam2/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F' \
+            cancel_data = '7|0|77|https://155.178.63.75/dnotam/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F' \
                           '|gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611' \
                           '|gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|' + item['transactionId'] + '||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;/2600011424' \
                           '|11|0|Classification-All|-1|12|Communications|22|COM|1|13|Lighted Aids|75|LIGHTED AID|2|14|Navaids|25|NAV|3|15|Radar' \
@@ -261,7 +261,7 @@ def techops_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                           '|Venreddy|Success|niru.venreddy@techops.gov|Passwd1#|java.util.ArrayList/4159755760|gov.faa.aim.dnotam.ui.dto.UserPreference/1057420195' \
                           '|EXPIRY_NOTIFICATION_HRS|48|SHOWPAGINATION|YES|SHOWMAP|NO|ROWLIMIT|50|CANCEL_DAYS|gov.faa.aim.dnotam.ui.dto.UserRole/1873077557' \
                           '|OCC|AOCC|POCC|73GaU5txY8hpDOUEHQZQ00p|Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/67.0.3396.99 Chrome/67.0.3396.99 Safari/537.36' \
-                          '|24012|72BF830FD055B93A35324F04396F97E5| Issued NOTAM is incorrect.|1|2|3|4|3|5|6|5|7|6|0|8|8|0|0|0|9|7|10|8|11|12|13|12|12|0|13|14' \
+                          '|24012|' + xsrfToken +'| Issued NOTAM is incorrect.|1|2|3|4|3|5|6|5|7|6|0|8|8|0|0|0|9|7|10|8|11|12|13|12|12|0|13|14' \
                           '|10|8|15|11|16|12|17|18|16|19|10|8|20|11|21|12|22|23|21|24|10|8|25|11|26|12|27|28|26|29|10|8|30|11|31|12|32|33|31|34|10|8|35|11' \
                           '|36|12|37|38|36|39|10|8|40|11|41|12|12|42|41|43|9|2|10|2|30|44|10|2|45|46|8|0|47|8|8|0|48|0|49|WTI$itu|23|8|0|50|51|21|52|53|54|0' \
                           '|30|0|55|56|0|9|6|0|0|8|57|0|0|90|58|5|59|60|61|59|62|63|59|64|65|59|66|67|59|68|24|8|0|0|32|0|58|2|69|70|65|0|70|0|0|0|71|15|71|0|0|0' \
