@@ -202,6 +202,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
 
         if 'errorCode' not in submission_response.keys() or submission_response['errorCode'] != '0':
             print '%s - %s' %(threading.current_thread().getName(), response.text)
+            time.sleep(30)
             continue
         else:
             submitted_en2_notams += 1

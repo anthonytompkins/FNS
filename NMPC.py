@@ -155,7 +155,7 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
         try:
             response = session.post(form_url,verify=False,json=notam_data, proxies=proxies)
 
-            print '%s - %s' %(threading.current_thread().getName(), response.text)
+            #print '%s - %s' %(threading.current_thread().getName(), response.text)
 
             if response.status_code != 200:
                 print "%s - Error Posting NMPC NOTAM" %(threading.current_thread().getName())

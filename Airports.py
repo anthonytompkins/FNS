@@ -50,9 +50,9 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
     submitted_airport_notams = 0
     canceled_airpot_notams = 0
 
-    xsrf_data = "7|0|4|https://155.178.63.75/dnotam2/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
+    xsrf_data = "7|0|4|https://155.178.63.75/dnotam/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
 
-    utility_data = "7|0|4|https://155.178.63.75/dnotam2/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|"
+    utility_data = "7|0|4|https://155.178.63.75/dnotam/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|"
 
     # A request session
     session = requests.Session()
@@ -115,9 +115,9 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
             continue
 
 
-        xsrfToken = json.loads ( response.text.lstrip('//OK') )
+        xsrfToken = json.loads ( response.text.lstrip('//OK') )[2][1]
 
-        login_data = '7|2|9|https://155.178.63.75/dnotam2/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + \
+        login_data = '7|2|9|https://155.178.63.75/dnotam/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken + \
                      '|gov.faa.aim.dnotam.ui.client.AirportInformationService|performLogin|java.lang.String/2004016611|'+ username +'|' + password + '|1|2|3|4|5|6|4|7|7|7|7|8|9|4|0|'
 
         try:
@@ -182,7 +182,7 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
                 'NOTAM_R_NUMBER' : '04%2F001',
                 'USER_TYPE' : 'AIRPORT',
                 'RMLS_LOG_ID' : '',
-                'xsrfToken' : xsrfToken[2][1]
+                'xsrfToken' : xsrfToken
         }
 
         submission_time = datetime.datetime.utcnow()
@@ -242,8 +242,8 @@ def airport_generator(_home_url,_username,_password,_notams,_length,_delay,_canc
 
             del submitted_notams[:]
 
-            cancel_data = '7|2|129|https://155.178.63.75/dnotam2/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
-                          'com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken[2][1] + '|' \
+            cancel_data = '7|2|129|https://155.178.63.75/dnotam/dnotam/|1D09985EB283A7F23DE6CEA240EECD6F|' \
+                          'com.google.gwt.user.client.rpc.XsrfToken/4254043109|' + xsrfToken + '|' \
                           'gov.faa.aim.dnotam.ui.client.AirportInformationService|cancelNotam|java.lang.String/2004016611|' \
                           'gov.faa.aim.dnotam.ui.dto.UserTO/1159427881|' + item['transactionId'] + '||[[Ljava.lang.String;/4182515373|[Ljava.lang.String;/2600011424' \
                           '|1|0|Keyword-All|2|Aerodrome|20|AD|3|Apron|31|APRON|6|Obstruction|OBST|7|Runway|RWY|9|Taxiway|30|TWY|18668' \
