@@ -50,9 +50,6 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
     submitted_nmpc_notams = 0
     canceled_nmpc_notams = 0
 
-    xsrf_data = "7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|CCA65B31464BDB27545C23C142FEEEF8|com.google.gwt.user.client.rpc.XsrfTokenService|getNewXsrfToken|1|2|3|4|0|"
-
-    utility_data = '7|0|4|https://notamdemo.aim.nas.faa.gov/dnotamtest/dnotam/|478CF164B5FD1D3E43383F3E499124D9|gov.faa.aim.dnotam.ui.client.UtilityService|getLogFileLocations|1|2|3|4|0|'
     # A request session
     session = requests.Session()
 
@@ -207,7 +204,6 @@ def nmpc_generator(_home_url,_username,_password,_project_id, _notams,_length,_d
             project_response = json.loads(response.text)
 
             for project in project_response:
-                print "%s - Looping" % (threading.current_thread().getName())
                 if project.get('notamnumber') != None and submission_response['notamNumber'] == project['notamnumber'].encode('ascii','ignore'):
                     submission_response['transactionId'] = project['transactionid']
                     notam_num_found = True
