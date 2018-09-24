@@ -4,8 +4,8 @@ from urlparse import urlparse
 
 def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_rate, _log_file_path):
 
-    #proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
-    proxies = None
+    proxies = { 'http': 'http://localhost:8080', 'https': 'http://localhost:8080'}
+    #proxies = None
 
     # create log file
     log_file_path = _log_file_path + '/' + threading.current_thread().getName() + '.log'
@@ -82,9 +82,9 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
              'Accept-Language': 'en-US,en;q=0.5',
              'Accept-Encoding': 'gzip, deflate',
              'Content-Type': 'text/x-gwt-rpc; charset=utf-8',
-             'X-GWT-Permutation': '578B73B06A8B1665F602BBCC942329F1',
-             'X-GWT-Module-Base': 'https://notamdemo.aim.nas.faa.gov/en2plus/en2/',
-             'Referer': 'https://notamdemo.aim.nas.faa.gov/en2plus/'
+             'X-GWT-Permutation': 'BFE80B3A5BBCB26421F74BF7548FF429',
+             'X-GWT-Module-Base': 'https://155.178.63.75/en2/en2/',
+             'Referer': 'https://155.178.63.75/en2/'
              }
         )
 
@@ -101,7 +101,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             continue
 
 
-        session.cookies.update( { 'JSESSIONIDXSRF3N2':'330581523574837336' } )
+        session.cookies.update( { 'JSESSIONIDXSRF3N2':'557581537816709617' } )
 
         try:
             response = session.post(xsrf_url,verify=False,data=xsrf_data, proxies=proxies)
@@ -142,6 +142,7 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
         end_time = '%02d%02d' %(end_date.hour, end_date.minute)
 
         free_form_text = 'AIRSPACE %s' %((random.choice(string.letters)).capitalize())
+        session_id = session.cookies['JSESSIONID'][4:session.cookies['JSESSIONID'].find(':')]
 
         notam_data = {
             'arptObstacle' : 'on',
@@ -149,12 +150,12 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             'END_DATE' : [end_date.strftime('%m/%d/%Y'), end_date.strftime('%m/%d/%Y')],
             'NOTES' : '',
             'FREE_FORM_TEXT' : free_form_text,
-            'USER_ID' : '8003',
+            'USER_ID' : '25430',
             'TRANSACTION_ID' : '',
             'FEATURE_ID' : '0',
             'SCENARIO_ID' : '101',
             'AIRPORT_ID' : ['345078',''],
-            'i_groupid' : '1',
+            'i_groupid' : '2',
             'START_TIME' : start_time,
             'END_TIME' : end_time,
             'US_FAA' : '!ISP XX/XXX ZNY %s %s%s-%s%s' %(free_form_text, start_date.strftime('%y%m%d'), start_time, end_date.strftime('%y%m%d'), end_time),
@@ -165,9 +166,9 @@ def en2_generator(_home_url,_username,_password,_notams,_length,_delay,_cancel_r
             'C_TRANSACTION_ID' :'',
             'ARPT_DSG' : 'ZNY',
             'ACCOUNT_DESIGNATOR' : 'ISP',
-            'SESSION_ID' : session.cookies['JSESSIONID'],
+            'SESSION_ID' : session_id,
             'COMPLEX_SCHED' : '',
-            'FORM_KEY' : '1523574968436',
+            'FORM_KEY' : '1537817223616',
             'ON_CLICK_NEW_BTN_TIME' : 'undefined',
             'SAVE_FAVORITE' : '',
             'FORM_TYPE' : 'ENII'
